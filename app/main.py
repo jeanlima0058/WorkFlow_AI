@@ -1,11 +1,23 @@
 from fastapi import FastAPI
-from sqlalchemy import text
+from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import engine
+from app.routes.auth import router as auth_router
+
 
 app = FastAPI(
-    title="WorkFlow AI API",
+    title="WorkFlow AI",
     version="1.0.0"
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5500"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -17,20 +29,4 @@ def root():
     }
 
 
-@app.get("/health")
-def health():
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-
-        return {
-            "status": "ok",
-            "database": "connected"
-        }
-
-    except Exception as e:
-        return {
-            "status": "error",
-            "database": "disconnected",
-            "detail": str(e)
-        }
+app.include_router(auth_router)
