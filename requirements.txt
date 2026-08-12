@@ -5,3 +5,6 @@ pymysql
 pydantic
 pydantic-settings
 python-dotenv
+email-validator
+passlib[bcrypt]
+PyJWT
