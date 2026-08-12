@@ -1,23 +1,42 @@
 # WorkFlow AI
 
-Sistema web para automação e processamento inteligente de documentos utilizando Inteligência Artificial.
+Sistema web para gerenciamento, processamento e análise inteligente de documentos utilizando Inteligência Artificial.
 
-## Sobre o projeto
+## Status do Projeto
 
-O WorkFlow AI tem como objetivo automatizar o processo de recebimento, organização, processamento e análise de documentos.
+Em desenvolvimento — Sprint 2 (MVP).
 
-A aplicação será desenvolvida para reduzir tarefas manuais, melhorar a organização dos documentos e utilizar recursos de Inteligência Artificial para auxiliar na classificação e extração de informações.
+O projeto está sendo desenvolvido de forma modular, permitindo a expansão das funcionalidades de processamento de documentos, OCR e Inteligência Artificial.
 
-## Objetivos
+---
 
-- Automatizar o recebimento de documentos;
-- Organizar documentos de forma estruturada;
-- Realizar processamento automático de arquivos;
-- Utilizar OCR para extração de texto;
-- Utilizar Inteligência Artificial para classificação e análise;
-- Armazenar informações em banco de dados;
-- Disponibilizar informações por meio de uma API;
-- Gerar indicadores e relatórios.
+## Objetivo
+
+O WorkFlow AI tem como objetivo automatizar o fluxo de recebimento, processamento e análise de documentos.
+
+O fluxo principal planejado é:
+
+Usuário
+↓
+Autenticação
+↓
+Upload do documento
+↓
+Armazenamento
+↓
+OCR
+↓
+Extração do texto
+↓
+Inteligência Artificial
+↓
+Classificação e extração de informações
+↓
+Armazenamento dos resultados
+↓
+Apresentação ao usuário
+
+---
 
 ## Tecnologias
 
@@ -27,20 +46,26 @@ A aplicação será desenvolvida para reduzir tarefas manuais, melhorar a organi
 - FastAPI
 - Uvicorn
 - SQLAlchemy
-- PostgreSQL
+- Pydantic
+
+### Banco de Dados
+
+- MySQL
+- XAMPP
+- phpMyAdmin
+- PyMySQL
 
 ### Inteligência Artificial
 
-- OpenAI API
-- Bibliotecas de processamento de documentos
-- OCR
+A camada de Inteligência Artificial será implementada posteriormente, sendo responsável pela análise, classificação e extração de informações dos documentos.
 
-### Frontend
+### OCR
 
-- React
-- JavaScript / TypeScript
+O módulo OCR será responsável pela extração de texto de documentos e imagens.
 
-## Estrutura do projeto
+---
+
+## Estrutura do Projeto
 
 ```text
 WorkFlow_AI/
@@ -51,7 +76,18 @@ WorkFlow_AI/
 │   ├── database.py
 │   │
 │   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── document.py
+│   │   ├── ocr_result.py
+│   │   └── ai_result.py
+│   │
 │   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── document.py
+│   │   └── auth.py
+│   │
 │   ├── routes/
 │   ├── services/
 │   ├── utils/
@@ -62,7 +98,6 @@ WorkFlow_AI/
 │
 ├── uploads/
 ├── tests/
-├── .env
 ├── .gitignore
 ├── requirements.txt
 └── README.md
