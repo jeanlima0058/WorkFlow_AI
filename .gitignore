@@ -1,5 +1,24 @@
+# Ambiente virtual
 .venv/
-.env
+venv/
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Variáveis de ambiente
+.env
+
+# Arquivos enviados pelos usuários
 uploads/*
+!uploads/.gitkeep
+
+# Banco local
+*.db
+
+# IDE
+.vscode/
+
+# Sistema operacional
+Thumbs.db
+desktop.ini
