@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 
+
 from app.database import get_db
 from app.schemas.document import DocumentResponse
 from app.services.document_service import salvar_documento
@@ -75,3 +76,45 @@ def obter_documento(
         )
 
     return documento
+
+@router.delete("/{document_id}")
+def excluir_documento(
+    document_id: int,
+    usuario_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    documento = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.usuario_id == usuario_id
+        )
+        .first()
+    )
+
+    if not documento:
+        raise HTTPException(
+            status_code=404,
+            detail="Documento não encontrado"
+        )
+
+    try:
+        import os
+
+        if os.path.exists(documento.caminho_arquivo):
+            os.remove(documento.caminho_arquivo)
+
+        db.delete(documento)
+        db.commit()
+
+        return {
+            "message": "Documento excluído com sucesso"
+        }
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao excluir documento"
+        )
