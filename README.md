@@ -1,103 +1,86 @@
-# WorkFlow AI
+# DocFlow AI
 
-Sistema web para gerenciamento, processamento e análise inteligente de documentos utilizando Inteligência Artificial.
+Sistema para gerenciamento e processamento inteligente de documentos, desenvolvido com FastAPI, MySQL e recursos de Inteligência Artificial.
 
-## Status do Projeto
-
-Em desenvolvimento — Sprint 2 (MVP).
-
-O projeto está sendo desenvolvido de forma modular, permitindo a expansão das funcionalidades de processamento de documentos, OCR e Inteligência Artificial.
+O projeto tem como objetivo permitir o envio, gerenciamento e processamento de documentos, utilizando OCR para extração de texto e, posteriormente, recursos de IA para análise das informações extraídas.
 
 ---
 
-## Objetivo
+## Tecnologias utilizadas
 
-O WorkFlow AI tem como objetivo automatizar o fluxo de recebimento, processamento e análise de documentos.
-
-O fluxo principal planejado é:
-
-Usuário
-↓
-Autenticação
-↓
-Upload do documento
-↓
-Armazenamento
-↓
-OCR
-↓
-Extração do texto
-↓
-Inteligência Artificial
-↓
-Classificação e extração de informações
-↓
-Armazenamento dos resultados
-↓
-Apresentação ao usuário
-
----
-
-## Tecnologias
-
-### Backend
+### Back-end
 
 - Python
 - FastAPI
-- Uvicorn
 - SQLAlchemy
-- Pydantic
-
-### Banco de Dados
-
 - MySQL
-- XAMPP
-- phpMyAdmin
 - PyMySQL
-
-### Inteligência Artificial
-
-A camada de Inteligência Artificial será implementada posteriormente, sendo responsável pela análise, classificação e extração de informações dos documentos.
+- Pydantic
+- JWT
+- Passlib
+- Bcrypt
 
 ### OCR
 
-O módulo OCR será responsável pela extração de texto de documentos e imagens.
+- Tesseract OCR
+- Pytesseract
+- Pillow
+- PyMuPDF
+
+### Front-end
+
+- HTML
+- CSS
+- JavaScript
+
+### Versionamento
+
+- Git
+- Gitea
 
 ---
 
-## Estrutura do Projeto
+## Estrutura do projeto
 
 ```text
 WorkFlow_AI/
 │
 ├── app/
-│   ├── main.py
-│   ├── config.py
-│   ├── database.py
-│   │
 │   ├── models/
-│   │   ├── __init__.py
-│   │   ├── user.py
+│   │   ├── ai_result.py
 │   │   ├── document.py
 │   │   ├── ocr_result.py
-│   │   └── ai_result.py
+│   │   └── user.py
 │   │
 │   ├── schemas/
-│   │   ├── __init__.py
-│   │   ├── user.py
+│   │   ├── auth.py
 │   │   ├── document.py
-│   │   └── auth.py
+│   │   └── user.py
 │   │
 │   ├── routes/
+│   │   ├── auth.py
+│   │   └── documents.py
+│   │
 │   ├── services/
+│   │   ├── auth_service.py
+│   │   └── document_service.py
+│   │
 │   ├── utils/
-│   ├── ai/
+│   │   └── security.py
+│   │
 │   ├── ocr/
-│   ├── storage/
-│   └── reports/
+│   │   └── ocr_service.py
+│   │
+│   ├── database.py
+│   └── main.py
+│
+├── frontend/
+│
+├── tests/
+│   ├── test_ocr.py
+│   └── test_ocr_pdf.py
 │
 ├── uploads/
-├── tests/
-├── .gitignore
+│
 ├── requirements.txt
 └── README.md
