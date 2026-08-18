@@ -5,7 +5,7 @@ from PIL import Image
 
 
 TESSERACT_PATH = (
-    r"C:\Users\usrlabecon20\AppData\Local\Tesseract-OCR\tesseract.exe"
+    r"C:\Users\usrlabeco2N\AppData\Local\Tesseract-OCR\tesseract.exe"
 )
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
