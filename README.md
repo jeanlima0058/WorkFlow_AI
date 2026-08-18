@@ -1,86 +1,45 @@
-# DocFlow AI
+## OCR
 
-Sistema para gerenciamento e processamento inteligente de documentos, desenvolvido com FastAPI, MySQL e recursos de Inteligência Artificial.
+O sistema possui um módulo de OCR responsável por extrair texto de documentos enviados pelo usuário.
 
-O projeto tem como objetivo permitir o envio, gerenciamento e processamento de documentos, utilizando OCR para extração de texto e, posteriormente, recursos de IA para análise das informações extraídas.
-
----
-
-## Tecnologias utilizadas
-
-### Back-end
-
-- Python
-- FastAPI
-- SQLAlchemy
-- MySQL
-- PyMySQL
-- Pydantic
-- JWT
-- Passlib
-- Bcrypt
-
-### OCR
+### Tecnologias utilizadas
 
 - Tesseract OCR
 - Pytesseract
-- Pillow
 - PyMuPDF
+- Pillow
 
-### Front-end
+### Funcionamento
 
-- HTML
-- CSS
-- JavaScript
+O fluxo de processamento é:
 
-### Versionamento
+1. Usuário envia um documento;
+2. O documento é armazenado;
+3. A API identifica o tipo de arquivo;
+4. O OCR processa o documento;
+5. O texto é extraído;
+6. O resultado é armazenado na tabela `ocr_results`;
+7. O status do documento é atualizado.
 
-- Git
-- Gitea
+O sistema atualmente suporta:
 
----
+- PDF
+- PNG
+- JPG
+- JPEG
 
-## Estrutura do projeto
+### Endpoint
 
-```text
-WorkFlow_AI/
-│
-├── app/
-│   ├── models/
-│   │   ├── ai_result.py
-│   │   ├── document.py
-│   │   ├── ocr_result.py
-│   │   └── user.py
-│   │
-│   ├── schemas/
-│   │   ├── auth.py
-│   │   ├── document.py
-│   │   └── user.py
-│   │
-│   ├── routes/
-│   │   ├── auth.py
-│   │   └── documents.py
-│   │
-│   ├── services/
-│   │   ├── auth_service.py
-│   │   └── document_service.py
-│   │
-│   ├── utils/
-│   │   └── security.py
-│   │
-│   ├── ocr/
-│   │   └── ocr_service.py
-│   │
-│   ├── database.py
-│   └── main.py
-│
-├── frontend/
-│
-├── tests/
-│   ├── test_ocr.py
-│   └── test_ocr_pdf.py
-│
-├── uploads/
-│
-├── requirements.txt
-└── README.md
+O processamento pode ser executado pela documentação Swagger:
+
+`POST /ocr/process/{document_id}`
+
+Exemplo de resposta:
+
+```json
+{
+  "message": "OCR processado com sucesso",
+  "documento_id": 1,
+  "status": "CONCLUIDO",
+  "texto_extraido": "Texto extraído do documento..."
+}
