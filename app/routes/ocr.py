@@ -4,20 +4,21 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.document import Document
 from app.models.ocr_result import OCRResult
-from app.ocr.ocr_service import extrair_texto_pdf, extrair_texto_imagem
+from app.services.document_processor import processar_documento
 from app.utils.security import get_current_user
 
 import os
+from datetime import datetime
 
 
 router = APIRouter(
     prefix="/ocr",
-    tags=["OCR"]
+    tags=["Processamento de Documentos"]
 )
 
 
 @router.post("/process/{document_id}")
-def processar_ocr(
+def processar_documento_arquivo(
     document_id: int,
     usuario_id: int = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -46,28 +47,12 @@ def processar_ocr(
 
     try:
 
-        extensao = os.path.splitext(
-            documento.nome_arquivo
-        )[1].lower()
+        documento.status = "PROCESSANDO"
+        db.commit()
 
-        if extensao == ".pdf":
-
-            texto = extrair_texto_pdf(
-                documento.caminho_arquivo
-            )
-
-        elif extensao in [".png", ".jpg", ".jpeg"]:
-
-            texto = extrair_texto_imagem(
-                documento.caminho_arquivo
-            )
-
-        else:
-
-            raise HTTPException(
-                status_code=400,
-                detail="Tipo de arquivo não suportado pelo OCR"
-            )
+        processamento = processar_documento(
+            documento.caminho_arquivo
+        )
 
         resultado = (
             db.query(OCRResult)
@@ -77,41 +62,67 @@ def processar_ocr(
             .first()
         )
 
-        if resultado:
+        if processamento["sucesso"]:
 
-            resultado.texto_extraido = texto
-            resultado.status = "CONCLUIDO"
+            if resultado:
+
+                resultado.texto_extraido = processamento["texto"]
+                resultado.status = "CONCLUIDO"
+                resultado.data_processamento = datetime.now()
+
+            else:
+
+                resultado = OCRResult(
+                    documento_id=documento.id,
+                    texto_extraido=processamento["texto"],
+                    status="CONCLUIDO",
+                    data_processamento=datetime.now()
+                )
+
+                db.add(resultado)
+
+            documento.status = "PROCESSADO"
 
         else:
 
-            resultado = OCRResult(
-                documento_id=documento.id,
-                texto_extraido=texto,
-                status="CONCLUIDO"
-            )
+            if resultado:
 
-            db.add(resultado)
+                resultado.texto_extraido = None
+                resultado.status = processamento["status"]
+                resultado.data_processamento = datetime.now()
 
-        documento.status = "OCR_CONCLUIDO"
+            else:
+
+                resultado = OCRResult(
+                    documento_id=documento.id,
+                    texto_extraido=None,
+                    status=processamento["status"],
+                    data_processamento=datetime.now()
+                )
+
+                db.add(resultado)
+
+            documento.status = processamento["status"]
 
         db.commit()
         db.refresh(resultado)
 
         return {
-            "message": "OCR processado com sucesso",
+            "message": processamento["mensagem"],
             "documento_id": documento.id,
-            "status": resultado.status,
-            "texto_extraido": resultado.texto_extraido
+            "status": processamento["status"],
+            "texto_extraido": processamento["texto"]
         }
-
-    except HTTPException:
-        raise
 
     except Exception as error:
 
         db.rollback()
 
+        documento.status = "ERRO"
+
+        db.commit()
+
         raise HTTPException(
             status_code=500,
-            detail=f"Erro ao processar OCR: {str(error)}"
+            detail=f"Erro ao processar documento: {str(error)}"
         )
