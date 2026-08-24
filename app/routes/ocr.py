@@ -126,3 +126,84 @@ def processar_documento_arquivo(
             status_code=500,
             detail=f"Erro ao processar documento: {str(error)}"
         )
+
+@router.get("/")
+def listar_resultados_ocr(
+    usuario_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    resultados = (
+        db.query(OCRResult)
+        .join(
+            Document,
+            OCRResult.documento_id == Document.id
+        )
+        .filter(
+            Document.usuario_id == usuario_id
+        )
+        .order_by(
+            OCRResult.data_processamento.desc()
+        )
+        .all()
+    )
+
+    return [
+        {
+            "id": resultado.id,
+            "documento_id": resultado.documento_id,
+            "nome_arquivo": resultado.documento.nome_arquivo,
+            "status": resultado.status,
+            "texto_extraido": resultado.texto_extraido,
+            "data_processamento": resultado.data_processamento
+        }
+        for resultado in resultados
+    ]
+
+
+@router.get("/{document_id}")
+def obter_resultado_ocr(
+    document_id: int,
+    usuario_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    documento = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.usuario_id == usuario_id
+        )
+        .first()
+    )
+
+    if not documento:
+        raise HTTPException(
+            status_code=404,
+            detail="Documento não encontrado"
+        )
+
+    resultado = (
+        db.query(OCRResult)
+        .filter(
+            OCRResult.documento_id == document_id
+        )
+        .first()
+    )
+
+    if not resultado:
+        raise HTTPException(
+            status_code=404,
+            detail="Este documento ainda não possui um resultado de processamento"
+        )
+
+    return {
+        "id": resultado.id,
+        "documento_id": documento.id,
+        "nome_arquivo": documento.nome_arquivo,
+        "tipo_arquivo": documento.tipo_arquivo,
+        "status_documento": documento.status,
+        "status_ocr": resultado.status,
+        "texto_extraido": resultado.texto_extraido,
+        "data_processamento": resultado.data_processamento
+    }

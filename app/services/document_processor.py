@@ -5,9 +5,9 @@ from app.ocr.ocr_service import (
     extrair_texto_imagem
 )
 
-from app.services.text_extractor import (
-    extrair_texto_txt
-)
+from app.services.text_extractor import extrair_texto_txt
+from app.services.spreadsheet_extractor import extrair_planilha
+from app.services.yaml_extractor import extrair_yaml
 
 
 def processar_documento(caminho_arquivo: str) -> dict:
@@ -18,29 +18,14 @@ def processar_documento(caminho_arquivo: str) -> dict:
 
     try:
 
-        # PROCESSAMENTO DE PDF
         if extensao == ".pdf":
 
             texto = extrair_texto_pdf(
                 caminho_arquivo
             )
 
-            if texto:
-                return {
-                    "sucesso": True,
-                    "texto": texto,
-                    "status": "PROCESSADO",
-                    "mensagem": "PDF processado com sucesso"
-                }
+            tipo = "PDF"
 
-            return {
-                "sucesso": False,
-                "texto": "",
-                "status": "SEM_TEXTO_EXTRAIDO",
-                "mensagem": "Nenhum texto foi extraído do PDF"
-            }
-
-        # PROCESSAMENTO DE IMAGENS
         elif extensao in [
             ".png",
             ".jpg",
@@ -51,52 +36,83 @@ def processar_documento(caminho_arquivo: str) -> dict:
                 caminho_arquivo
             )
 
-            if texto:
-                return {
-                    "sucesso": True,
-                    "texto": texto,
-                    "status": "PROCESSADO",
-                    "mensagem": "Imagem processada com sucesso"
-                }
+            tipo = "IMAGEM"
 
-            return {
-                "sucesso": False,
-                "texto": "",
-                "status": "SEM_TEXTO_EXTRAIDO",
-                "mensagem": "Nenhum texto foi encontrado na imagem"
-            }
-
-        # PROCESSAMENTO DE TXT
         elif extensao == ".txt":
 
             texto = extrair_texto_txt(
                 caminho_arquivo
             )
 
-            if texto:
-                return {
-                    "sucesso": True,
-                    "texto": texto,
-                    "status": "PROCESSADO",
-                    "mensagem": "Arquivo TXT processado com sucesso"
-                }
+            tipo = "TEXTO"
 
-            return {
-                "sucesso": False,
-                "texto": "",
-                "status": "SEM_TEXTO_EXTRAIDO",
-                "mensagem": "O arquivo TXT está vazio"
-            }
+        elif extensao == ".csv":
 
-        # FORMATO NÃO SUPORTADO
+            texto = extrair_planilha(
+                caminho_arquivo
+            )
+
+            tipo = "CSV"
+
+        elif extensao in [
+            ".xls",
+            ".xlsx",
+            ".xlsm"
+        ]:
+
+            texto = extrair_planilha(
+                caminho_arquivo
+            )
+
+            tipo = "PLANILHA"
+
+        elif extensao in [
+            ".yaml",
+            ".yml"
+        ]:
+
+            texto = extrair_yaml(
+                caminho_arquivo
+            )
+
+            tipo = "YAML"
+
         else:
 
             return {
                 "sucesso": False,
                 "texto": "",
                 "status": "FORMATO_NAO_SUPORTADO",
-                "mensagem": f"O formato {extensao} ainda não é suportado"
+                "tipo": "DESCONHECIDO",
+                "mensagem": (
+                    f"Formato {extensao} "
+                    "não suportado"
+                )
             }
+
+        if not texto or not texto.strip():
+
+            return {
+                "sucesso": False,
+                "texto": "",
+                "status": "SEM_TEXTO_EXTRAIDO",
+                "tipo": tipo,
+                "mensagem": (
+                    "O arquivo foi processado, "
+                    "mas nenhum conteúdo foi extraído"
+                )
+            }
+
+        return {
+            "sucesso": True,
+            "texto": texto,
+            "status": "CONCLUIDO",
+            "tipo": tipo,
+            "mensagem": (
+                "Documento processado "
+                "com sucesso"
+            )
+        }
 
     except Exception as error:
 
@@ -104,5 +120,6 @@ def processar_documento(caminho_arquivo: str) -> dict:
             "sucesso": False,
             "texto": "",
             "status": "ERRO_PROCESSAMENTO",
-            "mensagem": f"Erro ao processar o arquivo: {str(error)}"
+            "tipo": "DESCONHECIDO",
+            "mensagem": str(error)
         }
