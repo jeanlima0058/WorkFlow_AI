@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes.ocr import router as ocr_router
 
 from app.routes.auth import router as auth_router
 from app.routes.documents import router as documents_router
+from app.routes.ocr import router as ocr_router
+from app.routes.ai import router as ai_router
 
 
 app = FastAPI(
@@ -34,3 +35,4 @@ def root():
 app.include_router(auth_router)
 app.include_router(documents_router)
 app.include_router(ocr_router)
+app.include_router(ai_router)

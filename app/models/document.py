@@ -38,6 +38,6 @@ class Document(Base):
     ai_result = relationship(
         "AIResult",
         back_populates="documento",
-        uselist=False,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        uselist=False
     )
