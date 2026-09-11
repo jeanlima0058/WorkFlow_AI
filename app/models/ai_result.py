@@ -14,6 +14,7 @@ from app.database import Base
 
 
 class AIResult(Base):
+
     __tablename__ = "ai_results"
 
     id = Column(
@@ -49,6 +50,16 @@ class AIResult(Base):
     )
 
     informacoes_principais = Column(
+        Text,
+        nullable=True
+    )
+
+    insights = Column(
+        Text,
+        nullable=True
+    )
+
+    recomendacoes = Column(
         Text,
         nullable=True
     )
