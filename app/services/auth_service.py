@@ -1,61 +1,106 @@
-from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 
-from app.models.user import User
+from app.firebase_config import db
 from app.schemas.user import UserCreate
-from app.utils.security import hash_password, verify_password, create_access_token
+from app.utils.security import (
+    hash_password,
+    verify_password,
+    create_access_token
+)
 
 
-def create_user(db: Session, user_data: UserCreate) -> User:
-    existing_user = (
-        db.query(User)
-        .filter(User.email == user_data.email)
-        .first()
+def create_user(user_data: UserCreate) -> dict:
+    """
+    Cria um novo usuário no Firestore.
+    """
+
+    email = str(user_data.email).lower().strip()
+
+    # Verifica se o e-mail já está cadastrado
+    existing_users = (
+        db.collection("users")
+        .where("email", "==", email)
+        .limit(1)
+        .stream()
     )
 
-    if existing_user:
+    if next(existing_users, None) is not None:
         raise ValueError("E-mail já cadastrado")
 
-    new_user = User(
-        nome=user_data.nome,
-        email=user_data.email,
-        senha=hash_password(user_data.senha),
-        tipo_usuario=user_data.tipo_usuario,
+    # Cria uma referência com ID automático
+    user_ref = db.collection("users").document()
+
+    user_data_firestore = {
+        "id": user_ref.id,
+        "nome": user_data.nome,
+        "email": email,
+        "senha": hash_password(user_data.senha),
+        "tipo_usuario": user_data.tipo_usuario,
+        "data_criacao": datetime.now(timezone.utc)
+    }
+
+    # Salva o usuário no Firestore
+    user_ref.set(user_data_firestore)
+
+    return user_data_firestore
+
+
+def authenticate_user(email: str, senha: str):
+    """
+    Procura o usuário pelo e-mail e verifica a senha.
+    """
+
+    email = email.lower().strip()
+
+    users = (
+        db.collection("users")
+        .where("email", "==", email)
+        .limit(1)
+        .stream()
     )
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    user_document = next(users, None)
 
-    return new_user
-
-
-def authenticate_user(db: Session, email: str, senha: str):
-    user = (
-        db.query(User)
-        .filter(User.email == email)
-        .first()
-    )
-
-    if not user:
+    if user_document is None:
         return None
 
-    if not verify_password(senha, user.senha):
+    user = user_document.to_dict()
+
+    if not verify_password(senha, user["senha"]):
         return None
 
     return user
 
 
-def login_user(db: Session, email: str, senha: str) -> str:
-    user = authenticate_user(db, email, senha)
+def login_user(email: str, senha: str) -> str:
+    """
+    Autentica o usuário e gera o token JWT.
+    """
+
+    user = authenticate_user(email, senha)
 
     if not user:
         raise ValueError("E-mail ou senha inválidos")
 
     token = create_access_token(
         {
-            "sub": str(user.id),
-            "email": user.email
+            "sub": str(user["id"]),
+            "email": user["email"]
         }
     )
 
     return token
+
+
+def get_user_by_id(user_id: str):
+    """
+    Busca um usuário pelo ID do documento no Firestore.
+    """
+
+    user_ref = db.collection("users").document(str(user_id))
+    user_document = user_ref.get()
+
+    if not user_document.exists:
+        return None
+
+    return user_document.to_dict()
