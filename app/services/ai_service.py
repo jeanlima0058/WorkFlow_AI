@@ -1,14 +1,11 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 from google import genai
-from sqlalchemy.orm import Session
 
-from app.models.document import Document
-from app.models.ocr_result import OCRResult
-from app.models.ai_result import AIResult
+from app.firebase_config import db
 
 
 # ==================================================
@@ -38,59 +35,57 @@ client = genai.Client(
 # FUNÇÃO PRINCIPAL DE ANÁLISE
 # ==================================================
 
-def analisar_documento(
-    db: Session,
-    document_id: int
-):
+def analisar_documento(document_id: str):
     # ==================================================
-    # BUSCA O DOCUMENTO
+    # BUSCA O DOCUMENTO NO FIRESTORE
     # ==================================================
 
-    documento = (
-        db.query(Document)
-        .filter(Document.id == document_id)
-        .first()
-    )
+    documento_ref = db.collection("documents").document(document_id)
+    documento_snapshot = documento_ref.get()
 
-    if not documento:
+    if not documento_snapshot.exists:
         return {
             "sucesso": False,
             "mensagem": "Documento não encontrado"
         }
 
+    documento = documento_snapshot.to_dict()
+
 
     # ==================================================
-    # BUSCA O RESULTADO DO PROCESSAMENTO/OCR
+    # BUSCA O RESULTADO DO PROCESSAMENTO/OCR NO FIRESTORE
     # ==================================================
 
-    resultado_ocr = (
-        db.query(OCRResult)
-        .filter(OCRResult.documento_id == document_id)
-        .first()
+    ocr_query = (
+        db.collection("ocr_results")
+        .where("documento_id", "==", document_id)
+        .limit(1)
+        .stream()
     )
 
-    if not resultado_ocr:
+    ocr_snapshot = next(ocr_query, None)
+
+    if not ocr_snapshot:
         return {
             "sucesso": False,
             "mensagem": "O documento ainda não foi processado"
         }
+
+    resultado_ocr = ocr_snapshot.to_dict()
 
 
     # ==================================================
     # VERIFICA SE EXISTE CONTEÚDO PARA ANALISAR
     # ==================================================
 
-    if not resultado_ocr.texto_extraido:
+    if not resultado_ocr.get("texto_extraido"):
         return {
             "sucesso": False,
-            "mensagem": (
-                "Não foi possível obter conteúdo para análise"
-            )
+            "mensagem": "Não foi possível obter conteúdo para análise"
         }
 
-
     # Texto extraído do documento
-    texto = resultado_ocr.texto_extraido
+    texto = resultado_ocr["texto_extraido"]
 
 
     # ==================================================
@@ -484,143 +479,65 @@ CONTEÚDO DO DOCUMENTO:
 
 
     # ==================================================
-    # VERIFICA SE JÁ EXISTE UMA ANÁLISE NO BANCO
+    # SALVA OU ATUALIZA A ANÁLISE NO FIRESTORE
     # ==================================================
 
-    resultado_ai = (
-        db.query(AIResult)
-        .filter(AIResult.documento_id == document_id)
-        .first()
+    analise_ref = (
+        db.collection("ai_results")
+        .where("documento_id", "==", document_id)
+        .limit(1)
+        .stream()
     )
 
+    analise_existente = next(analise_ref, None)
+    agora = datetime.now(timezone.utc)
 
-    # ==================================================
-    # ATUALIZA UMA ANÁLISE EXISTENTE
-    # ==================================================
+    dados_analise = {
+        "documento_id": document_id,
+        "tipo_documento": analise_formatada["tipo_documento"],
+        "categoria": analise_formatada["categoria"],
+        "resumo": analise_formatada["resumo"],
+        "informacoes_principais": analise_formatada[
+            "informacoes_principais"
+        ],
+        "insights": analise_formatada["insights"],
+        "recomendacoes": analise_formatada["recomendacoes"],
+        "palavras_chave": analise_formatada["palavras_chave"],
+        "alertas": analise_formatada["alertas"],
+        "confianca": analise_formatada["confianca"],
+        "status": "CONCLUIDO",
+        "data_processamento": agora
+    }
 
-    if resultado_ai:
-
-        resultado_ai.tipo_documento = (
-            analise_formatada["tipo_documento"]
-        )
-
-        resultado_ai.categoria = (
-            analise_formatada["categoria"]
-        )
-
-        resultado_ai.resumo = (
-            analise_formatada["resumo"]
-        )
-
-        resultado_ai.informacoes_principais = (
-            analise_formatada["informacoes_principais"]
-        )
-
-        resultado_ai.palavras_chave = (
-            analise_formatada["palavras_chave"]
-        )
-
-        resultado_ai.alertas = (
-            analise_formatada["alertas"]
-        )
-
-        resultado_ai.confianca = (
-            analise_formatada["confianca"]
-        )
-
-        resultado_ai.insights = analise_formatada["insights"]
-
-        resultado_ai.recomendacoes = analise_formatada["recomendacoes"]
-
-        resultado_ai.status = "CONCLUIDO"
-
-        resultado_ai.data_processamento = (
-            datetime.now()
-        )
-
-
-    # ==================================================
-    # CRIA UMA NOVA ANÁLISE
-    # ==================================================
-
+    if analise_existente:
+        resultado_ref = analise_existente.reference
+        resultado_ref.update(dados_analise)
+        resultado_id = analise_existente.id
     else:
-
-        resultado_ai = AIResult(
-
-            documento_id=document_id,
-
-            tipo_documento=(
-                analise_formatada["tipo_documento"]
-            ),
-
-            categoria=(
-                analise_formatada["categoria"]
-            ),
-
-            resumo=(
-                analise_formatada["resumo"]
-            ),
-
-            informacoes_principais=(
-                analise_formatada[
-                    "informacoes_principais"
-                ]
-            ),
-
-            palavras_chave=(
-                analise_formatada["palavras_chave"]
-            ),
-
-            alertas=(
-                analise_formatada["alertas"]
-            ),
-
-            confianca=(
-                analise_formatada["confianca"]
-            ),
-
-            insights=analise_formatada["insights"],
-
-            recomendacoes=analise_formatada["recomendacoes"],
-
-            status="CONCLUIDO",
-
-            data_processamento=(
-                datetime.now()
-            )
-        )
-
-        # Adiciona a análise ao banco
-        db.add(resultado_ai)
+        resultado_ref = db.collection("ai_results").document()
+        dados_analise["id"] = resultado_ref.id
+        resultado_ref.set(dados_analise)
+        resultado_id = resultado_ref.id
 
 
     # ==================================================
-    # ATUALIZA O STATUS DO DOCUMENTO
+    # ATUALIZA O STATUS DO DOCUMENTO NO FIRESTORE
     # ==================================================
 
-    documento.status = "ANALISADO"
-
-
-    # ==================================================
-    # SALVA AS ALTERAÇÕES
-    # ==================================================
-
-    db.commit()
-
-    db.refresh(resultado_ai)
+    documento_ref.update({
+        "status": "ANALISADO"
+    })
 
 
     # ==================================================
-    # RETORNO DA ANÁLISE
+    # RETORNO FINAL DA ANÁLISE
     # ==================================================
 
     return {
-
         "sucesso": True,
-
-        "mensagem": (
-            "Documento analisado com sucesso pelo Gemini"
-        ),
-
-        "resultado": resultado_ai
+        "mensagem": "Documento analisado com sucesso pelo Gemini",
+        "resultado": {
+            "id": resultado_id,
+            **dados_analise
+        }
     }

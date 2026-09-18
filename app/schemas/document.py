@@ -1,10 +1,11 @@
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
 
 class DocumentResponse(BaseModel):
-    id: int
-    usuario_id: int
+    id: str
+    usuario_id: str
     nome_arquivo: str
     tipo_arquivo: str
     tamanho: int | None = None

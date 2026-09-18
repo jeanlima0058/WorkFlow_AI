@@ -1,12 +1,13 @@
 import os
 import uuid
-from datetime import datetime
 
-from fastapi import UploadFile
-from sqlalchemy.orm import Session
+from datetime import datetime, timezone
+from pathlib import Path
 
-from app.models.document import Document
-from app.models.ocr_result import OCRResult
+from fastapi import UploadFile, HTTPException
+
+from app.firebase_config import db
+
 from app.ocr.ocr_service import (
     extrair_texto_imagem,
     extrair_texto_pdf
@@ -15,111 +16,197 @@ from app.ocr.ocr_service import (
 
 UPLOAD_DIR = "uploads"
 
+EXTENSOES_PERMITIDAS = {
+    ".pdf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".bmp",
+    ".tiff"
+}
+
+TAMANHO_MAXIMO = 10 * 1024 * 1024  # 10 MB
+
+EXTENSOES_BLOQUEADAS = {
+    ".exe",
+    ".bat",
+    ".cmd",
+    ".com",
+    ".msi",
+    ".ps1",
+    ".vbs",
+    ".js",
+    ".jar",
+    ".scr",
+    ".dll",
+    ".sh"
+}
+
+def validar_arquivo(arquivo: UploadFile, conteudo: bytes):
+    nome_arquivo = arquivo.filename or ""
+
+    extensao = Path(nome_arquivo).suffix.lower()
+
+    if not extensao:
+        raise HTTPException(
+            status_code=400,
+            detail="O arquivo precisa ter uma extensão"
+        )
+
+    if extensao in EXTENSOES_BLOQUEADAS:
+        raise HTTPException(
+            status_code=400,
+            detail="Tipo de arquivo bloqueado por segurança"
+        )
+
+    if extensao not in EXTENSOES_PERMITIDAS:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Formato não permitido. "
+                "Envie PDF ou uma imagem compatível"
+            )
+        )
+
+    if not conteudo:
+        raise HTTPException(
+            status_code=400,
+            detail="O arquivo está vazio"
+        )
+
+    if len(conteudo) > TAMANHO_MAXIMO:
+        raise HTTPException(
+            status_code=413,
+            detail="O arquivo excede o limite de 10 MB"
+        )
 
 def salvar_documento(
-    db: Session,
     arquivo: UploadFile,
-    usuario_id: int
+    usuario_id: str
 ):
-    # Garante que a pasta uploads exista
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-    # Recupera a extensão do arquivo original
-    extensao = os.path.splitext(
-        arquivo.filename
-    )[1].lower()
+    nome_original = arquivo.filename or "arquivo_sem_nome"
 
-    # Gera um nome único
+    extensao = Path(nome_original).suffix.lower()
+
+    # Lê o conteúdo antes de salvar
+    conteudo = arquivo.file.read()
+
+    # Valida o arquivo antes de gravá-lo
+    validar_arquivo(arquivo, conteudo)
+
     nome_unico = f"{uuid.uuid4()}{extensao}"
 
-    # Define o caminho
     caminho = os.path.join(
         UPLOAD_DIR,
         nome_unico
     )
 
-    # Salva o arquivo
+    # Salva somente após a validação
     with open(caminho, "wb") as buffer:
-        buffer.write(arquivo.file.read())
+        buffer.write(conteudo)
 
-    # Obtém o tamanho
-    tamanho = os.path.getsize(caminho)
+    tamanho = len(conteudo)
 
-    # Cria o documento
-    documento = Document(
-        usuario_id=usuario_id,
-        nome_arquivo=arquivo.filename,
-        tipo_arquivo=arquivo.content_type or "application/octet-stream",
-        tamanho=tamanho,
-        caminho_arquivo=caminho,
-        status="RECEBIDO"
-    )
+    documento_ref = db.collection("documents").document()
 
-    db.add(documento)
-    db.commit()
-    db.refresh(documento)
+    data_upload = datetime.now(timezone.utc)
 
-    # Cria o registro do OCR
-    ocr_resultado = OCRResult(
-        documento_id=documento.id,
-        status="PROCESSANDO"
-    )
+    documento = {
+        "id": documento_ref.id,
+        "usuario_id": str(usuario_id),
+        "nome_arquivo": arquivo.filename or "arquivo_sem_nome",
+        "tipo_arquivo": (
+            arquivo.content_type
+            or "application/octet-stream"
+        ),
+        "tamanho": tamanho,
+        "caminho_arquivo": caminho,
+        "status": "RECEBIDO",
+        "data_upload": data_upload
+    }
 
-    db.add(ocr_resultado)
-    db.commit()
+    documento_ref.set(documento)
+
+    ocr_ref = db.collection("ocr_results").document()
+
+    ocr_resultado = {
+        "id": ocr_ref.id,
+        "documento_id": documento_ref.id,
+        "status": "PROCESSANDO",
+        "texto_extraido": None,
+        "data_processamento": None
+    }
+
+    ocr_ref.set(ocr_resultado)
 
     try:
-        # PDF
+        # Processamento de PDF
         if extensao == ".pdf":
             texto = extrair_texto_pdf(caminho)
 
-        # Imagens
-        elif extensao in [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]:
+        # Processamento de imagens
+        elif extensao in [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".bmp",
+            ".tiff"
+        ]:
             texto = extrair_texto_imagem(caminho)
 
-        # Formato não suportado pelo OCR
+        # Formato não suportado
         else:
-            ocr_resultado.status = "NAO_SUPORTADO"
-            ocr_resultado.texto_extraido = None
+            db.collection("ocr_results").document(
+                ocr_ref.id
+            ).update({
+                "status": "NAO_SUPORTADO",
+                "texto_extraido": None
+            })
 
-            documento.status = "RECEBIDO"
-
-            db.commit()
+            db.collection("documents").document(
+                documento_ref.id
+            ).update({
+                "status": "RECEBIDO"
+            })
 
             return documento
 
-        # Salva o texto extraído
-        ocr_resultado.texto_extraido = texto
-        ocr_resultado.status = "CONCLUIDO"
-        ocr_resultado.data_processamento = datetime.now()
+        data_processamento = datetime.now(timezone.utc)
 
-        documento.status = "OCR_CONCLUIDO"
+        db.collection("ocr_results").document(
+            ocr_ref.id
+        ).update({
+            "texto_extraido": texto,
+            "status": "CONCLUIDO",
+            "data_processamento": data_processamento
+        })
 
-        db.commit()
+        db.collection("documents").document(
+            documento_ref.id
+        ).update({
+            "status": "OCR_CONCLUIDO"
+        })
 
-    except Exception as erro:
-        db.rollback()
+        documento["status"] = "OCR_CONCLUIDO"
 
-        # Busca novamente os registros
-        documento = (
-            db.query(Document)
-            .filter(Document.id == documento.id)
-            .first()
-        )
+    except Exception:
+        data_processamento = datetime.now(timezone.utc)
 
-        ocr_resultado = (
-            db.query(OCRResult)
-            .filter(OCRResult.documento_id == documento.id)
-            .first()
-        )
+        db.collection("ocr_results").document(
+            ocr_ref.id
+        ).update({
+            "status": "ERRO",
+            "data_processamento": data_processamento
+        })
 
-        if ocr_resultado:
-            ocr_resultado.status = "ERRO"
-            ocr_resultado.data_processamento = datetime.now()
+        db.collection("documents").document(
+            documento_ref.id
+        ).update({
+            "status": "OCR_ERRO"
+        })
 
-        if documento:
-            documento.status = "OCR_ERRO"
-
-        db.commit()
+        documento["status"] = "OCR_ERRO"
 
     return documento

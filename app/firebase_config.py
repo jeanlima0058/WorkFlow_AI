@@ -7,8 +7,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CREDENTIALS_JSON = os.getenv("FIREBASE_CREDENTIALS_JSON")
-CREDENTIALS_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH")
+CREDENTIALS_JSON = os.getenv(
+    "FIREBASE_CREDENTIALS_JSON",
+    ""
+).strip()
+
+CREDENTIALS_PATH = os.getenv(
+    "FIREBASE_CREDENTIALS_PATH",
+    ""
+).strip()
 
 
 if not CREDENTIALS_JSON and not CREDENTIALS_PATH:
@@ -20,13 +27,17 @@ if not CREDENTIALS_JSON and not CREDENTIALS_PATH:
 if not firebase_admin._apps:
 
     if CREDENTIALS_JSON:
-        # Utilizado no Render
-        cred = credentials.Certificate(
-            json.loads(CREDENTIALS_JSON)
-        )
+        try:
+            cred_data = json.loads(CREDENTIALS_JSON)
+            cred = credentials.Certificate(cred_data)
+
+        except json.JSONDecodeError as erro:
+            raise RuntimeError(
+                "FIREBASE_CREDENTIALS_JSON contém "
+                "um JSON inválido"
+            ) from erro
 
     else:
-        # Utilizado localmente
         cred = credentials.Certificate(
             CREDENTIALS_PATH
         )

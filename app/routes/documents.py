@@ -1,12 +1,20 @@
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    UploadFile,
+    HTTPException
+)
 
+from app.firebase_config import db
 
-from app.database import get_db
 from app.schemas.document import DocumentResponse
-from app.services.document_service import salvar_documento
+
+from app.services.document_service import (
+    salvar_documento
+)
+
 from app.utils.security import get_current_user
-from app.models.document import Document
 
 
 router = APIRouter(
@@ -21,16 +29,21 @@ router = APIRouter(
 )
 def upload_documento(
     arquivo: UploadFile = File(...),
-    usuario_id: int = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    usuario_id: str = Depends(get_current_user)
 ):
-    documento = salvar_documento(
-        db=db,
-        arquivo=arquivo,
-        usuario_id=usuario_id
-    )
+    try:
+        documento = salvar_documento(
+            arquivo=arquivo,
+            usuario_id=usuario_id
+        )
 
-    return documento
+        return documento
+
+    except Exception as erro:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao salvar documento: {str(erro)}"
+        )
 
 
 @router.get(
@@ -38,37 +51,52 @@ def upload_documento(
     response_model=list[DocumentResponse]
 )
 def listar_documentos(
-    usuario_id: int = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    usuario_id: str = Depends(get_current_user)
 ):
-    documentos = (
-        db.query(Document)
-        .filter(Document.usuario_id == usuario_id)
-        .order_by(Document.data_upload.desc())
-        .all()
+    documentos_ref = (
+        db.collection("documents")
+        .where("usuario_id", "==", str(usuario_id))
+        .stream()
+    )
+
+    documentos = [
+        documento.to_dict()
+        for documento in documentos_ref
+    ]
+
+    documentos.sort(
+        key=lambda documento: documento.get(
+            "data_upload"
+        ) or "",
+        reverse=True
     )
 
     return documentos
+
 
 @router.get(
     "/{document_id}",
     response_model=DocumentResponse
 )
 def obter_documento(
-    document_id: int,
-    usuario_id: int = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    document_id: str,
+    usuario_id: str = Depends(get_current_user)
 ):
-    documento = (
-        db.query(Document)
-        .filter(
-            Document.id == document_id,
-            Document.usuario_id == usuario_id
-        )
-        .first()
-    )
+    documento_ref = db.collection(
+        "documents"
+    ).document(document_id)
 
-    if not documento:
+    documento_snapshot = documento_ref.get()
+
+    if not documento_snapshot.exists:
+        raise HTTPException(
+            status_code=404,
+            detail="Documento não encontrado"
+        )
+
+    documento = documento_snapshot.to_dict()
+
+    if documento.get("usuario_id") != str(usuario_id):
         raise HTTPException(
             status_code=404,
             detail="Documento não encontrado"
@@ -76,43 +104,63 @@ def obter_documento(
 
     return documento
 
+
 @router.delete("/{document_id}")
 def excluir_documento(
-    document_id: int,
-    usuario_id: int = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    document_id: str,
+    usuario_id: str = Depends(get_current_user)
 ):
-    documento = (
-        db.query(Document)
-        .filter(
-            Document.id == document_id,
-            Document.usuario_id == usuario_id
-        )
-        .first()
-    )
+    documento_ref = db.collection(
+        "documents"
+    ).document(document_id)
 
-    if not documento:
+    documento_snapshot = documento_ref.get()
+
+    if not documento_snapshot.exists:
+        raise HTTPException(
+            status_code=404,
+            detail="Documento não encontrado"
+        )
+
+    documento = documento_snapshot.to_dict()
+
+    if documento.get("usuario_id") != str(usuario_id):
         raise HTTPException(
             status_code=404,
             detail="Documento não encontrado"
         )
 
     try:
-        import os
+        caminho = documento.get("caminho_arquivo")
 
-        if os.path.exists(documento.caminho_arquivo):
-            os.remove(documento.caminho_arquivo)
+        if caminho:
+            import os
 
-        db.delete(documento)
-        db.commit()
+            if os.path.exists(caminho):
+                os.remove(caminho)
+
+        # Exclui os resultados OCR relacionados
+        ocr_documentos = (
+            db.collection("ocr_results")
+            .where(
+                "documento_id",
+                "==",
+                document_id
+            )
+            .stream()
+        )
+
+        for ocr_documento in ocr_documentos:
+            ocr_documento.reference.delete()
+
+        # Exclui o documento
+        documento_ref.delete()
 
         return {
             "message": "Documento excluído com sucesso"
         }
 
     except Exception:
-        db.rollback()
-
         raise HTTPException(
             status_code=500,
             detail="Erro ao excluir documento"
