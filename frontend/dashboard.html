@@ -1,72 +1,84 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>WorkFlow AI - Dashboard</title>
-
-    <link rel="stylesheet" href="css/style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Arquivos · Upload</title>
+  
+  <!-- Fontes e Ícones -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" />
+  
+  <!-- CSS Externo -->
+  <link rel="stylesheet" href="css/dashboard.css">
 </head>
-
 <body>
 
-    <header class="header">
+  <!-- FUNDO ANIMADO — Esteira de análise -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-track"></div>
+    <div class="bg-track secondary"></div>
+    <div class="bg-track tertiary"></div>
+    <div class="analysis-node"></div>
+  </div>
 
-        <strong>WorkFlow AI</strong>
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="content">
 
-        <button id="logout">
-            Sair
+    <!-- Cabeçalho / Marca -->
+    <div class="brand">
+      <div class="brand-icon">
+        <span class="material-symbols-outlined">analytics</span>
+      </div>
+      <h1>Sistema de Análise</h1>
+      <p>
+        <span>Anexe seus arquivos para análise</span>
+        <span class="gold-dot">◆</span>
+        <span>seguro &amp; rápido</span>
+      </p>
+    </div>
+
+    <!-- Card de arquivos anexados -->
+    <div class="attachments-card">
+      <div class="attachments-header">
+        <h2>
+          <span class="material-symbols-outlined">folder_data</span>
+          Arquivos anexados
+        </h2>
+        <span class="file-count" id="fileCount">0</span>
+      </div>
+
+      <div class="file-list" id="fileList">
+        <div class="empty-state" id="emptyState">
+          <span class="material-symbols-outlined">inbox</span>
+          <span>Nenhum arquivo anexado ainda</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campo de input fino -->
+    <div class="input-bar">
+      <div class="input-bar-inner" id="inputBar">
+        <span class="input-bar-text" id="inputBarText">Anexar arquivo para análise...</span>
+        <button class="attach-btn" id="attachBtn" aria-label="Anexar arquivo">
+          <span class="material-symbols-outlined">attach_file</span>
         </button>
+      </div>
+      <div class="input-hint">
+        <span class="material-symbols-outlined">lock</span>
+        <span>Processamento criptografado de ponta a ponta</span>
+        <span class="material-symbols-outlined">auto_awesome</span>
+      </div>
+    </div>
 
-    </header>
+    <!-- Input file invisível -->
+    <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.zip,.json,.xml">
 
-    <main class="dashboard">
+  </main>
 
-        <h1>Dashboard</h1>
-
-        <div class="user-card">
-
-            <p>
-                Usuário:
-                <strong id="userName">Carregando...</strong>
-            </p>
-
-            <p>
-                E-mail:
-                <strong id="userEmail">Carregando...</strong>
-            </p>
-
-        </div>
-
-        <div class="cards">
-
-            <div class="card">
-
-                <h3>Documentos</h3>
-
-                <strong>0</strong>
-
-            </div>
-
-            <div class="card">
-
-                <h3>Processados</h3>
-
-                <strong>0</strong>
-
-            </div>
-
-        </div>
-
-    </main>
-
-    <script src="js/dashboard.js"></script>
-
+  <!-- JavaScript Externo -->
+  <script src="js/dashboard.js"></script>
 </body>
-
 </html>

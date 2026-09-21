@@ -1,56 +1,172 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WorkFlow AI - Login</title>
-
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Arquivos · Login</title>
+  
+  <!-- Fontes e Ícones -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" />
+  
+  <!-- Estilo Externo (Pasta css/) -->
+  <link rel="stylesheet" href="css/index.css">
 </head>
-
 <body>
 
-    <main class="login-container">
+  <!-- ============================================
+       FUNDO ANIMADO
+       ============================================ -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-track"></div>
+    <div class="bg-track secondary"></div>
+    <div class="bg-track tertiary"></div>
+    <div class="analysis-node"></div>
+  </div>
 
-        <div class="login-box">
+  <!-- ============================================
+       TELA 1 — LOGIN
+       ============================================ -->
+  <section class="screen screen-login" id="screenLogin">
+    <div class="login-card" id="loginCard">
+      <div class="login-brand">
+        <div class="login-brand-icon">
+          <span class="material-symbols-outlined">shield_person</span>
+        </div>
+        <h1>Bem-vindo</h1>
+        <p>
+          <span>Acesse sua conta</span>
+          <span class="gold-dot">◆</span>
+          <span>análise segura</span>
+        </p>
+      </div>
 
-            <h1>WorkFlow AI</h1>
-
-            <p class="subtitle">Acesso ao sistema</p>
-
-            <form id="loginForm">
-
-                <label for="email">E-mail</label>
-
-                <input
-                    type="email"
-                    id="email"
-                    placeholder="Digite seu e-mail"
-                    required
-                >
-
-                <label for="senha">Senha</label>
-
-                <input
-                    type="password"
-                    id="senha"
-                    placeholder="Digite sua senha"
-                    required
-                >
-
-                <button type="submit">
-                    Entrar
-                </button>
-
-            </form>
-
-            <p id="message"></p>
-
+      <form id="loginForm" novalidate>
+        <!-- Campo usuário -->
+        <div class="form-group">
+          <label class="form-label" for="loginUser">Usuário</label>
+          <div class="form-field" id="fieldUserContainer">
+            <span class="material-symbols-outlined field-icon">person</span>
+            <input 
+              type="text" 
+              id="loginUser" 
+              placeholder="seu usuário" 
+              autocomplete="username"
+              aria-describedby="errorMsg"
+              required
+            >
+          </div>
         </div>
 
-    </main>
+        <!-- Campo senha -->
+        <div class="form-group">
+          <label class="form-label" for="loginPass">Senha</label>
+          <div class="form-field" id="fieldPassContainer">
+            <span class="material-symbols-outlined field-icon">lock</span>
+            <input 
+              type="password" 
+              id="loginPass" 
+              placeholder="••••••••" 
+              autocomplete="current-password"
+              aria-describedby="errorMsg"
+              required
+            >
+            <button type="button" class="field-action" id="togglePass" aria-label="Mostrar senha">
+              <span class="material-symbols-outlined" id="togglePassIcon">visibility</span>
+            </button>
+          </div>
+        </div>
 
-    <script src="js/login.js"></script>
+        <!-- Mensagem de erro -->
+        <div class="error-msg" id="errorMsg" aria-live="polite">
+          <span class="material-symbols-outlined">error</span>
+          <span id="errorText">Usuário ou senha inválidos</span>
+        </div>
 
+        <!-- Botão entrar -->
+        <button type="submit" class="login-btn" id="loginBtn">
+          <span>Entrar</span>
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+      </form>
+
+      <div class="login-divider">ou</div>
+
+      <div class="login-links">
+        <a href="#" id="linkForgot">
+          <span class="material-symbols-outlined">help</span>
+          Esqueci a senha
+        </a>
+        <a href="#" id="linkRegister">
+          <span class="material-symbols-outlined">person_add</span>
+          Criar conta
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       TELA 2 — APP (upload/análise)
+       ============================================ -->
+  <section class="screen screen-app hidden" id="screenApp">
+    <div class="content">
+      <button class="logout-btn" id="logoutBtn" aria-label="Sair">
+        <span class="material-symbols-outlined">logout</span>
+      </button>
+
+      <!-- Cabeçalho -->
+      <div class="brand">
+        <div class="brand-icon">
+          <span class="material-symbols-outlined">analytics</span>
+        </div>
+        <h1 id="appWelcomeTitle">Sistema de Análise</h1>
+        <p>
+          <span>Anexe seus arquivos para análise</span>
+          <span class="gold-dot">◆</span>
+          <span>seguro &amp; rápido</span>
+        </p>
+      </div>
+
+      <!-- Card de anexos -->
+      <div class="attachments-card">
+        <div class="attachments-header">
+          <h2>
+            <span class="material-symbols-outlined">folder_data</span>
+            Arquivos anexados
+          </h2>
+          <span class="file-count" id="fileCount">0</span>
+        </div>
+
+        <div class="file-list" id="fileList">
+          <div class="empty-state" id="emptyState">
+            <span class="material-symbols-outlined">inbox</span>
+            <span>Nenhum arquivo anexado ainda</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campo de input -->
+      <div class="input-bar">
+        <div class="input-bar-inner" id="inputBar" tabindex="0" role="button">
+          <span class="input-bar-text" id="inputBarText">Anexar arquivo para análise...</span>
+          <button class="attach-btn" id="attachBtn" aria-label="Anexar arquivo">
+            <span class="material-symbols-outlined">attach_file</span>
+          </button>
+        </div>
+        <div class="input-hint">
+          <span class="material-symbols-outlined">lock</span>
+          <span>Processamento criptografado de ponta a ponta</span>
+          <span class="material-symbols-outlined">auto_awesome</span>
+        </div>
+      </div>
+
+      <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.zip,.json,.xml">
+    </div>
+  </section>
+
+  <!-- Script Externo (Pasta js/) -->
+  <script src="js/index.js"></script>
 </body>
 </html>
