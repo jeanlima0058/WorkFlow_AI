@@ -1,84 +1,149 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Análise de Arquivos · Upload</title>
-  
-  <!-- Fontes e Ícones -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" />
-  
-  <!-- CSS Externo -->
-  <link rel="stylesheet" href="css/dashboard.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Arquivos · Upload</title>
+    <!-- Fontes e Ícones -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <!-- CSS Externo -->
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
-
-  <!-- FUNDO ANIMADO — Esteira de análise -->
-  <div class="bg-canvas" aria-hidden="true">
-    <div class="bg-track"></div>
-    <div class="bg-track secondary"></div>
-    <div class="bg-track tertiary"></div>
-    <div class="analysis-node"></div>
-  </div>
-
-  <!-- CONTEÚDO PRINCIPAL -->
-  <main class="content">
-
-    <!-- Cabeçalho / Marca -->
-    <div class="brand">
-      <div class="brand-icon">
-        <span class="material-symbols-outlined">analytics</span>
-      </div>
-      <h1>Sistema de Análise</h1>
-      <p>
-        <span>Anexe seus arquivos para análise</span>
-        <span class="gold-dot">◆</span>
-        <span>seguro &amp; rápido</span>
-      </p>
+    <!-- FUNDO ANIMADO - Esteira de análise -->
+    <div class="bg-canvas" aria-hidden="true">
+        <div class="bg-track"></div>
+        <div class="bg-track secondary"></div>
+        <div class="bg-track tertiary"></div>
+        <div class="analysis-node"></div>
     </div>
 
-    <!-- Card de arquivos anexados -->
-    <div class="attachments-card">
-      <div class="attachments-header">
-        <h2>
-          <span class="material-symbols-outlined">folder_data</span>
-          Arquivos anexados
-        </h2>
-        <span class="file-count" id="fileCount">0</span>
-      </div>
-
-      <div class="file-list" id="fileList">
-        <div class="empty-state" id="emptyState">
-          <span class="material-symbols-outlined">inbox</span>
-          <span>Nenhum arquivo anexado ainda</span>
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="content">
+        <!-- Cabeçalho / Marca -->
+        <div class="brand">
+            <div class="brand-icon">
+                <span class="material-symbols-outlined">analytics</span>
+            </div>
+            <h1>Sistema de Análise</h1>
+            <p>
+                <span>Anexe seus arquivos para análise</span>
+                <span class="gold-dot">•</span>
+                <span>seguro &amp; rápido</span>
+            </p>
         </div>
-      </div>
+
+        <!-- Card de arquivos anexados -->
+        <div class="attachments-card">
+            <div class="attachments-header">
+                <h2>
+                    <span class="material-symbols-outlined">folder_data</span>
+                    Arquivos anexados
+                </h2>
+                <span class="file-count" id="fileCount">0</span>
+            </div>
+            <div class="file-list" id="fileList">
+                <div class="empty-state" id="emptyState">
+                    <span class="material-symbols-outlined">inbox</span>
+                    <span>Nenhum arquivo anexado ainda</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Input com Ícones Adicionais -->
+        <div class="input-bar-wrapper">
+            <!-- Ícones de Perfil e Histórico (integrados) -->
+            <div class="input-actions">
+                <button class="action-btn" id="profileBtn" aria-label="Perfil">
+                    <span class="material-symbols-outlined">person</span>
+                </button>
+                <button class="action-btn" id="historyBtn" aria-label="Histórico">
+                    <span class="material-symbols-outlined">history</span>
+                </button>
+            </div>
+
+            <!-- Campo de input fino -->
+            <div class="input-bar">
+                <div class="input-bar-inner" id="inputBar" tabindex="0" role="button">
+                    <span class="input-bar-text" id="inputBarText">Anexar arquivo para análise...</span>
+                    <button class="attach-btn" id="attachBtn" aria-label="Anexar arquivo">
+                        <span class="material-symbols-outlined">attach_file</span>
+                    </button>
+                </div>
+                <div class="input-hint">
+                    <span class="material-symbols-outlined">lock</span>
+                    <span>Processamento criptografado de ponta a ponta</span>
+                    <span class="material-symbols-outlined">auto_awesome</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input file invisível -->
+        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.zip,.json,.xml">
+
+        <!-- Área de Resultado da IA (expansível) -->
+        <div class="ai-result-panel" id="aiResultPanel">
+            <div class="ai-result-header">
+                <h3>
+                    <span class="material-symbols-outlined">auto_awesome</span>
+                    Resultado da Análise
+                </h3>
+                <button class="close-result-btn" id="closeResultBtn" aria-label="Fechar resultado">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="ai-result-content" id="aiResultContent">
+                <!-- Conteúdo dinâmico aqui -->
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE PERFIL -->
+    <div class="modal-overlay" id="profileModalOverlay">
+        <div class="modal" id="profileModal">
+            <div class="modal-header">
+                <h2>
+                    <span class="material-symbols-outlined">person</span>
+                    Perfil do Usuário
+                </h2>
+                <button class="modal-close" id="closeProfileModal" aria-label="Fechar">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="modal-body" id="profileModalBody">
+                <!-- Conteúdo carregado via JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="logout-modal-btn" id="logoutModalBtn">
+                    <span class="material-symbols-outlined">logout</span>
+                    Sair
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- Campo de input fino -->
-    <div class="input-bar">
-      <div class="input-bar-inner" id="inputBar">
-        <span class="input-bar-text" id="inputBarText">Anexar arquivo para análise...</span>
-        <button class="attach-btn" id="attachBtn" aria-label="Anexar arquivo">
-          <span class="material-symbols-outlined">attach_file</span>
-        </button>
-      </div>
-      <div class="input-hint">
-        <span class="material-symbols-outlined">lock</span>
-        <span>Processamento criptografado de ponta a ponta</span>
-        <span class="material-symbols-outlined">auto_awesome</span>
-      </div>
+    <!-- MODAL DE HISTÓRICO -->
+    <div class="modal-overlay" id="historyModalOverlay">
+        <div class="modal modal-large" id="historyModal">
+            <div class="modal-header">
+                <h2>
+                    <span class="material-symbols-outlined">history</span>
+                    Histórico de Documentos
+                </h2>
+                <button class="modal-close" id="closeHistoryModal" aria-label="Fechar">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="modal-body" id="historyModalBody">
+                <!-- Conteúdo carregado via JS -->
+            </div>
+        </div>
     </div>
 
-    <!-- Input file invisível -->
-    <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.zip,.json,.xml">
-
-  </main>
-
-  <!-- JavaScript Externo -->
-  <script src="js/dashboard.js"></script>
+    <!-- Script Externo -->
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
