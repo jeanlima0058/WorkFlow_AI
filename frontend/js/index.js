@@ -1,5 +1,5 @@
 (function() {
-  const API_BASE_URL = "COLOCAR_AQUI_URL_DO_RENDER";
+  const API_BASE_URL = "https://workflow-ai-lds3.onrender.com";
 
   async function apiFetch(endpoint, options = {}) {
       const url = `${API_BASE_URL}${endpoint}`;
