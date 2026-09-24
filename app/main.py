@@ -1,38 +1,54 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
-from app.routes.auth import router as auth_router
-from app.routes.documents import router as documents_router
-from app.routes.ocr import router as ocr_router
-from app.routes.ai import router as ai_router
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from app.routes import auth, documents, ocr, ai
 
 
 app = FastAPI(
     title="WorkFlow AI",
+    description="API para gerenciamento, OCR e análise de documentos com IA",
     version="1.0.0"
 )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5500"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# =========================
+# ROTAS DA API
+# =========================
+
+app.include_router(auth.router)
+app.include_router(documents.router)
+app.include_router(ocr.router)
+app.include_router(ai.router)
+
+
+# =========================
+# FRONTEND
+# =========================
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
+
+app.mount(
+    "/css",
+    StaticFiles(directory=FRONTEND_DIR / "css"),
+    name="css"
+)
+
+app.mount(
+    "/js",
+    StaticFiles(directory=FRONTEND_DIR / "js"),
+    name="js"
 )
 
 
-@app.get("/")
-def root():
-    return {
-        "status": "ok",
-        "message": "WorkFlow AI API funcionando"
-    }
+@app.get("/", include_in_schema=False)
+def frontend():
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
-app.include_router(auth_router)
-app.include_router(documents_router)
-app.include_router(ocr_router)
-app.include_router(ai_router)
+@app.get("/dashboard.html", include_in_schema=False)
+def dashboard():
+    return FileResponse(FRONTEND_DIR / "dashboard.html")
