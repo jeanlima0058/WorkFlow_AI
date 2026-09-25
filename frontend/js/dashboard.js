@@ -4,7 +4,6 @@
     // =============================================
     const API_BASE_URL = "https://workflow-ai-lds3.onrender.com";
 
-    // Função para escapar HTML (Segurança contra XSS)
     function escapeHTML(str) {
         if (str === null || str === undefined) return '';
         return String(str).replace(/[&<>'"]/g, 
@@ -18,7 +17,6 @@
         );
     }
 
-    // Função centralizada para chamadas à API
     async function apiFetch(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
         const token = sessionStorage.getItem('access_token');
@@ -30,7 +28,6 @@
         try {
             const response = await fetch(url, { ...options, headers });
 
-            // Tratamento de 401 - Sessão expirada
             if (response.status === 401) {
                 sessionStorage.removeItem('access_token');
                 sessionStorage.removeItem('user_data');
@@ -47,7 +44,6 @@
             }
 
             if (!response.ok) {
-                // Extrai a mensagem de erro da API
                 const message = data.detail || data.message || `Erro ${response.status}`;
                 const error = new Error(message);
                 error.status = response.status;
@@ -56,7 +52,6 @@
 
             return data;
         } catch (error) {
-            // Erro de conexão
             if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
                 const connError = new Error('Não foi possível conectar à API. Verifique sua internet.');
                 connError.status = 0;
@@ -152,9 +147,6 @@
 
     let files = [];
 
-    // =============================================
-    // 5. FUNÇÕES AUXILIARES
-    // =============================================
     function formatSize(bytes) {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -169,9 +161,6 @@
         return map[ext] || 'insert_drive_file';
     }
 
-    // =============================================
-    // 6. RENDERIZAÇÃO DE ARQUIVOS ANEXADOS
-    // =============================================
     function renderFileTags() {
         if (files.length === 0) {
             fileTags.innerHTML = '';
@@ -203,9 +192,6 @@
         });
     }
 
-    // =============================================
-    // 7. UPLOAD E PROCESSAMENTO
-    // =============================================
     async function uploadFile(file) {
         const formData = new FormData();
         formData.append('arquivo', file);
@@ -322,16 +308,13 @@
     }
 
     // =============================================
-    // 8. EVENTOS DE UPLOAD
+    // 5. EVENTOS DE UPLOAD
     // =============================================
-    // Clicar na barra inteira abre o seletor de arquivos
     inputBar.addEventListener('click', (e) => {
-        // Se clicou no botão específico, deixa o botão cuidar
         if (e.target.closest('.attach-btn')) return;
         fileInput.click();
     });
 
-    // Botão específico também abre o seletor
     attachBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         fileInput.click();
@@ -344,7 +327,6 @@
         }
     });
 
-    // Drag and drop
     inputBar.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); inputBar.classList.add('drag-over'); });
     inputBar.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); inputBar.classList.remove('drag-over'); });
     inputBar.addEventListener('drop', (e) => { 
@@ -354,7 +336,6 @@
         if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files); 
     });
 
-    // Teclado
     inputBar.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -365,7 +346,7 @@
     closeResultBtn.addEventListener('click', () => aiResultPanel.classList.remove('visible'));
 
     // =============================================
-    // 9. MODAL DE PERFIL (CORRIGIDO)
+    // 6. MODAL DE PERFIL
     // =============================================
     const profileModalOverlay = document.getElementById('profileModalOverlay');
     const closeProfileModal = document.getElementById('closeProfileModal');
@@ -379,34 +360,22 @@
         let apiUser = null;
         let localUser = null;
 
-        // Tenta buscar dados locais primeiro (fallback)
         try {
             const stored = sessionStorage.getItem('user_data');
             if (stored) localUser = JSON.parse(stored);
         } catch (e) { /* ignora */ }
 
-        // Tenta buscar da API
         try {
             apiUser = await apiFetch('/auth/me');
-            // Atualiza o localStorage com os dados mais recentes
             sessionStorage.setItem('user_data', JSON.stringify(apiUser));
         } catch (error) {
-            // Se for 401, o apiFetch já redirecionou
             if (error.status === 401) return;
-            
-            // Se for erro de conexão ou outro, usa fallback
             if (!localUser) {
-                profileModalBody.innerHTML = `
-                    <div class="ai-error">
-                        <span class="material-symbols-outlined">error</span>
-                        <span>${escapeHTML(error.message)}</span>
-                    </div>
-                `;
+                profileModalBody.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>${escapeHTML(error.message)}</span></div>`;
                 return;
             }
         }
 
-        // Mescla dados: API tem prioridade, fallback para local
         const user = {
             nome: apiUser?.nome || localUser?.nome || null,
             email: apiUser?.email || localUser?.email || null,
@@ -415,22 +384,10 @@
         };
 
         profileModalBody.innerHTML = `
-            <div class="profile-field">
-                <label>Nome</label>
-                <span>${user.nome ? escapeHTML(user.nome) : 'Não informado'}</span>
-            </div>
-            <div class="profile-field">
-                <label>E-mail</label>
-                <span>${user.email ? escapeHTML(user.email) : 'Não informado'}</span>
-            </div>
-            <div class="profile-field">
-                <label>Tipo de Usuário</label>
-                <span>${user.tipo_usuario ? escapeHTML(user.tipo_usuario) : 'Não informado'}</span>
-            </div>
-            <div class="profile-field">
-                <label>Data de Criação</label>
-                <span>${user.data_criacao ? new Date(user.data_criacao).toLocaleString('pt-BR') : 'Não informada'}</span>
-            </div>
+            <div class="profile-field"><label>Nome</label><span>${user.nome ? escapeHTML(user.nome) : 'Não informado'}</span></div>
+            <div class="profile-field"><label>E-mail</label><span>${user.email ? escapeHTML(user.email) : 'Não informado'}</span></div>
+            <div class="profile-field"><label>Tipo de Usuário</label><span>${user.tipo_usuario ? escapeHTML(user.tipo_usuario) : 'Não informado'}</span></div>
+            <div class="profile-field"><label>Data de Criação</label><span>${user.data_criacao ? new Date(user.data_criacao).toLocaleString('pt-BR') : 'Não informada'}</span></div>
         `;
     }
 
@@ -446,7 +403,7 @@
     });
 
     // =============================================
-    // 10. MODAL DE HISTÓRICO (CORRIGIDO)
+    // 7. MODAL DE HISTÓRICO
     // =============================================
     const historyModalOverlay = document.getElementById('historyModalOverlay');
     const closeHistoryModal = document.getElementById('closeHistoryModal');
@@ -460,12 +417,7 @@
             const documents = await apiFetch('/documents/');
             
             if (!documents || documents.length === 0) {
-                historyModalBody.innerHTML = `
-                    <div class="empty-state">
-                        <span class="material-symbols-outlined">inbox</span>
-                        <span>Nenhum documento encontrado.</span>
-                    </div>
-                `;
+                historyModalBody.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">inbox</span><span>Nenhum documento encontrado.</span></div>`;
                 return;
             }
 
@@ -491,7 +443,6 @@
             });
             historyModalBody.innerHTML = html;
 
-            // Adicionar evento de clique em cada item
             historyModalBody.querySelectorAll('.history-item').forEach(item => {
                 item.addEventListener('click', async () => {
                     const docId = item.dataset.docId;
@@ -501,11 +452,9 @@
                         const result = await apiFetch(`/ai/result/${docId}`);
                         renderAiResult(result);
                     } catch (error) {
-                        // Diferencia os tipos de erro
                         if (error.status === 404) {
                             showAiError('Este documento ainda não possui uma análise de IA.');
                         } else if (error.status === 401) {
-                            // apiFetch já redirecionou
                             return;
                         } else if (error.status === 0) {
                             showAiError('Não foi possível conectar à API. Verifique sua internet.');
@@ -517,38 +466,15 @@
             });
 
         } catch (error) {
-            // Diferencia os tipos de erro na listagem
-            if (error.status === 401) {
-                // apiFetch já redirecionou
-                return;
-            } else if (error.status === 0) {
-                historyModalBody.innerHTML = `
-                    <div class="ai-error">
-                        <span class="material-symbols-outlined">error</span>
-                        <span>Não foi possível conectar à API. Verifique sua internet.</span>
-                    </div>
-                `;
+            if (error.status === 401) return;
+            else if (error.status === 0) {
+                historyModalBody.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>Não foi possível conectar à API. Verifique sua internet.</span></div>`;
             } else if (error.status === 403) {
-                historyModalBody.innerHTML = `
-                    <div class="ai-error">
-                        <span class="material-symbols-outlined">error</span>
-                        <span>Acesso negado. Você não tem permissão para ver este histórico.</span>
-                    </div>
-                `;
+                historyModalBody.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>Acesso negado. Você não tem permissão para ver este histórico.</span></div>`;
             } else if (error.status === 404) {
-                historyModalBody.innerHTML = `
-                    <div class="empty-state">
-                        <span class="material-symbols-outlined">inbox</span>
-                        <span>Nenhum documento encontrado.</span>
-                    </div>
-                `;
+                historyModalBody.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">inbox</span><span>Nenhum documento encontrado.</span></div>`;
             } else {
-                historyModalBody.innerHTML = `
-                    <div class="ai-error">
-                        <span class="material-symbols-outlined">error</span>
-                        <span>Erro ao carregar histórico: ${escapeHTML(error.message)}</span>
-                    </div>
-                `;
+                historyModalBody.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>Erro ao carregar histórico: ${escapeHTML(error.message)}</span></div>`;
             }
         }
     }
@@ -559,7 +485,7 @@
     historyModalOverlay.addEventListener('click', (e) => { if (e.target === historyModalOverlay) closeHistoryModalFn(); });
 
     // =============================================
-    // 11. MODAL DE PESQUISA
+    // 8. MODAL DE PESQUISA
     // =============================================
     const searchModalOverlay = document.getElementById('searchModalOverlay');
     const closeSearchModal = document.getElementById('closeSearchModal');
@@ -658,7 +584,6 @@
     searchSubmitBtn.addEventListener('click', performSearch);
     searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performSearch(); });
 
-    // Fechar modais com ESC
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeProfileModalFn();
@@ -667,8 +592,5 @@
         }
     });
 
-    // =============================================
-    // 12. INICIALIZAÇÃO
-    // =============================================
     renderFileTags();
 })();

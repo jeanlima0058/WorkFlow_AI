@@ -28,10 +28,14 @@
                     <p>Painel Administrativo</p>
                 </div>
             </div>
-            <div class="header-actions">
-                <button class="action-btn" id="backBtn"><span class="material-symbols-outlined">arrow_back</span> Voltar</button>
-                <button class="action-btn" id="logoutBtn"><span class="material-symbols-outlined">logout</span> Sair</button>
+            <div class="header-user">
+                <span class="material-symbols-outlined">person</span>
+                <span id="adminUserName">Admin</span>
             </div>
+            <button class="action-btn logout-header-btn" id="logoutBtn" aria-label="Sair">
+                <span class="material-symbols-outlined">logout</span>
+                <span>Sair</span>
+            </button>
         </header>
 
         <main class="admin-main">
@@ -40,7 +44,7 @@
                 <!-- Preenchido via JS -->
             </section>
 
-            <!-- Gráficos -->
+            <!-- Gráficos (conteúdo principal) -->
             <section class="charts-grid">
                 <div class="chart-card">
                     <h3><span class="material-symbols-outlined">bar_chart</span> Documentos por Tipo</h3>
@@ -50,37 +54,68 @@
                     <h3><span class="material-symbols-outlined">pie_chart</span> Status dos Documentos</h3>
                     <div id="chartStatus"></div>
                 </div>
-            </section>
-
-            <!-- Gerenciamento de Usuários -->
-            <section class="users-section">
-                <div class="section-header">
-                    <h2><span class="material-symbols-outlined">group</span> Usuários</h2>
-                    <button class="btn-primary" id="newUserBtn"><span class="material-symbols-outlined">person_add</span> Novo Usuário</button>
-                </div>
-                <div class="table-container" id="usersTableContainer">
-                    <!-- Tabela via JS -->
+                <div class="chart-card full-width">
+                    <h3><span class="material-symbols-outlined">timeline</span> Documentos Analisados por Período</h3>
+                    <div id="chartTimeline"></div>
                 </div>
             </section>
 
-            <!-- Logs -->
-            <section class="logs-section">
-                <div class="section-header">
-                    <h2><span class="material-symbols-outlined">receipt_long</span> Logs Recentes</h2>
+            <!-- Cards de Acesso Rápido -->
+            <section class="cards-grid">
+                <div class="access-card" id="usersCard">
+                    <div class="access-card-icon"><span class="material-symbols-outlined">group</span></div>
+                    <h3>Usuários</h3>
+                    <p>Gerenciar usuários do sistema</p>
+                    <button class="btn-primary">
+                        <span class="material-symbols-outlined">arrow_forward</span> Gerenciar usuários
+                    </button>
                 </div>
-                <div class="table-container" id="logsTableContainer">
-                    <!-- Tabela via JS -->
+
+                <div class="access-card" id="logsCard">
+                    <div class="access-card-icon"><span class="material-symbols-outlined">receipt_long</span></div>
+                    <h3>Logs</h3>
+                    <p>Visualizar atividades recentes do sistema</p>
+                    <button class="btn-primary">
+                        <span class="material-symbols-outlined">arrow_forward</span> Ver registros
+                    </button>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Modal de Novo Usuário -->
-    <div class="modal-overlay" id="userModalOverlay">
-        <div class="modal">
+    <!-- MODAL DE USUÁRIOS -->
+    <div class="modal-overlay" id="usersModalOverlay">
+        <div class="modal modal-xlarge" id="usersModal">
+            <div class="modal-header">
+                <h2><span class="material-symbols-outlined">group</span> Gerenciar Usuários</h2>
+                <button class="modal-close" id="closeUsersModal"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-toolbar">
+                    <div class="search-input-wrapper">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" id="userSearchInput" placeholder="Pesquisar usuário pelo nome...">
+                    </div>
+                    <div class="filter-group" id="userTypeFilter">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="admin">Administradores</button>
+                        <button class="filter-btn" data-filter="usuario">Usuários</button>
+                    </div>
+                    <button class="btn-primary" id="newUserBtn"><span class="material-symbols-outlined">person_add</span> Cadastrar usuário</button>
+                </div>
+                <div id="usersListContainer" class="modal-list">
+                    <!-- Lista via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE NOVO USUÁRIO -->
+    <div class="modal-overlay" id="newUserModalOverlay">
+        <div class="modal" id="newUserModal">
             <div class="modal-header">
                 <h2><span class="material-symbols-outlined">person_add</span> Novo Usuário</h2>
-                <button class="modal-close" id="closeUserModal"><span class="material-symbols-outlined">close</span></button>
+                <button class="modal-close" id="closeNewUserModal"><span class="material-symbols-outlined">close</span></button>
             </div>
             <div class="modal-body">
                 <form id="newUserForm">
@@ -99,14 +134,41 @@
                     <div class="form-group">
                         <label>Tipo de Usuário</label>
                         <select id="newUserType">
-                            <option value="usuario">Usuário Comum</option>
-                            <option value="ADMIN">Administrador</option>
+                            <option value="usuario">Usuário</option>
+                            <option value="admin">Administrador</option>
                         </select>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn-primary">Cadastrar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE LOGS -->
+    <div class="modal-overlay" id="logsModalOverlay">
+        <div class="modal modal-xlarge" id="logsModal">
+            <div class="modal-header">
+                <h2><span class="material-symbols-outlined">receipt_long</span> Logs do Sistema</h2>
+                <button class="modal-close" id="closeLogsModal"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-toolbar logs-toolbar">
+                    <div class="date-filter-group">
+                        <label>Data inicial</label>
+                        <input type="date" id="logStartDate">
+                    </div>
+                    <div class="date-filter-group">
+                        <label>Data final</label>
+                        <input type="date" id="logEndDate">
+                    </div>
+                    <button class="btn-primary" id="filterLogsBtn"><span class="material-symbols-outlined">search</span> Pesquisar</button>
+                    <button class="btn-secondary" id="clearLogsFilterBtn"><span class="material-symbols-outlined">clear</span> Limpar</button>
+                </div>
+                <div id="logsListContainer" class="modal-list">
+                    <!-- Lista via JS -->
+                </div>
             </div>
         </div>
     </div>

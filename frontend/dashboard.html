@@ -31,7 +31,6 @@
             </p>
         </div>
 
-        <!-- Barra de ações e arquivos em ícones -->
         <div class="action-bar">
             <div class="action-icons">
                 <button class="action-btn" id="profileBtn" aria-label="Perfil">
@@ -52,7 +51,7 @@
             </div>
         </div>
 
-        <!-- CORRIGIDO: Barra de upload unificada com botão dentro -->
+        <!-- Barra de upload unificada -->
         <div class="upload-bar-container">
             <div class="input-bar-inner" id="inputBar" tabindex="0" role="button">
                 <span class="material-symbols-outlined input-icon">attach_file</span>
@@ -62,7 +61,8 @@
                 </button>
             </div>
         </div>
-        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.zip,.json,.xml">
+        <!-- Input file invisível: necessário para o funcionamento, mas não visível -->
+        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.zip,.json,.xml" style="display: none;">
 
         <!-- Painel de Resultado da IA -->
         <div class="ai-result-panel" id="aiResultPanel">
