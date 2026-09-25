@@ -1,9 +1,27 @@
 (function() {
-    const API_BASE_URL = "COLOCAR_AQUI_URL_DO_RENDER";
+    // =============================================
+    // 1. CONFIGURAÇÃO
+    // =============================================
+    const API_BASE_URL = "https://workflow-ai-lds3.onrender.com";
 
+    // Função para escapar HTML (Segurança contra XSS)
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
+
+    // Função centralizada para chamadas à API
     async function apiFetch(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
-        const token = sessionStorage.getItem('access_token'); // Mudança para sessionStorage
+        const token = sessionStorage.getItem('access_token');
 
         const headers = { ...options.headers };
         if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -12,11 +30,12 @@
         try {
             const response = await fetch(url, { ...options, headers });
 
+            // Tratamento de 401 - Sessão expirada
             if (response.status === 401) {
                 sessionStorage.removeItem('access_token');
                 sessionStorage.removeItem('user_data');
-                window.location.href = '/'; // Navegação absoluta
-                throw new Error('Sessão expirada.');
+                window.location.href = '/';
+                throw new Error('Sessão expirada. Faça login novamente.');
             }
 
             const contentType = response.headers.get('content-type');
@@ -28,26 +47,37 @@
             }
 
             if (!response.ok) {
+                // Extrai a mensagem de erro da API
                 const message = data.detail || data.message || `Erro ${response.status}`;
-                throw new Error(message);
+                const error = new Error(message);
+                error.status = response.status;
+                throw error;
             }
+
             return data;
         } catch (error) {
+            // Erro de conexão
             if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-                throw new Error('Erro de conexão.');
+                const connError = new Error('Não foi possível conectar à API. Verifique sua internet.');
+                connError.status = 0;
+                throw connError;
             }
             throw error;
         }
     }
 
-    // Verificação de autenticação
+    // =============================================
+    // 2. VERIFICAÇÃO DE AUTENTICAÇÃO
+    // =============================================
     const token = sessionStorage.getItem('access_token');
     if (!token) {
         window.location.href = '/';
         return;
     }
 
-    // Fundo animado (mesmo código)
+    // =============================================
+    // 3. FUNDO ANIMADO
+    // =============================================
     const bgCanvas = document.querySelector('.bg-canvas');
     const tracks = [{ top: '28%' }, { top: '50%' }, { top: '72%' }];
     const fileIcons = ['description', 'picture_as_pdf', 'image', 'table_chart', 'text_snippet', 'folder_zip', 'insert_drive_file', 'dataset', 'analytics', 'receipt_long', 'article', 'code'];
@@ -104,22 +134,27 @@
     }
     initBackground();
 
-    // Elementos do DOM
+    // =============================================
+    // 4. ELEMENTOS DO DOM
+    // =============================================
     const inputBar = document.getElementById('inputBar');
     const inputBarText = document.getElementById('inputBarText');
+    const attachBtn = document.getElementById('attachBtn');
     const fileInput = document.getElementById('fileInput');
     const fileTags = document.getElementById('fileTags');
     const emptyStateTag = document.getElementById('emptyStateTag');
     const profileBtn = document.getElementById('profileBtn');
     const historyBtn = document.getElementById('historyBtn');
     const searchBtn = document.getElementById('searchBtn');
-    const searchTrigger = document.getElementById('searchTrigger');
     const aiResultPanel = document.getElementById('aiResultPanel');
     const aiResultContent = document.getElementById('aiResultContent');
     const closeResultBtn = document.getElementById('closeResultBtn');
 
     let files = [];
 
+    // =============================================
+    // 5. FUNÇÕES AUXILIARES
+    // =============================================
     function formatSize(bytes) {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -134,20 +169,9 @@
         return map[ext] || 'insert_drive_file';
     }
 
-    // Função para escapar HTML (Segurança)
-    function escapeHTML(str) {
-        if (!str) return '';
-        return str.replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
-        );
-    }
-
+    // =============================================
+    // 6. RENDERIZAÇÃO DE ARQUIVOS ANEXADOS
+    // =============================================
     function renderFileTags() {
         if (files.length === 0) {
             fileTags.innerHTML = '';
@@ -179,6 +203,9 @@
         });
     }
 
+    // =============================================
+    // 7. UPLOAD E PROCESSAMENTO
+    // =============================================
     async function uploadFile(file) {
         const formData = new FormData();
         formData.append('arquivo', file);
@@ -276,7 +303,7 @@
         if (added > 0) {
             renderFileTags();
             inputBarText.textContent = `${added} arquivo(s) anexado(s)`;
-            setTimeout(() => { inputBarText.textContent = 'Anexar arquivo...'; }, 1800);
+            setTimeout(() => { inputBarText.textContent = 'Anexar arquivo para análise...'; }, 1800);
 
             for (const file of arr) {
                 try {
@@ -290,22 +317,56 @@
             }
         } else {
             inputBarText.textContent = 'Arquivo já anexado';
-            setTimeout(() => { inputBarText.textContent = 'Anexar arquivo...'; }, 1500);
+            setTimeout(() => { inputBarText.textContent = 'Anexar arquivo para análise...'; }, 1500);
         }
     }
 
-    // Eventos de Upload
-    inputBar.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) { addFiles(e.target.files); fileInput.value = ''; }
+    // =============================================
+    // 8. EVENTOS DE UPLOAD
+    // =============================================
+    // Clicar na barra inteira abre o seletor de arquivos
+    inputBar.addEventListener('click', (e) => {
+        // Se clicou no botão específico, deixa o botão cuidar
+        if (e.target.closest('.attach-btn')) return;
+        fileInput.click();
     });
-    inputBar.addEventListener('dragover', (e) => { e.preventDefault(); inputBar.classList.add('drag-over'); });
-    inputBar.addEventListener('dragleave', (e) => { e.preventDefault(); inputBar.classList.remove('drag-over'); });
-    inputBar.addEventListener('drop', (e) => { e.preventDefault(); inputBar.classList.remove('drag-over'); if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files); });
+
+    // Botão específico também abre o seletor
+    attachBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) { 
+            addFiles(e.target.files); 
+            fileInput.value = ''; 
+        }
+    });
+
+    // Drag and drop
+    inputBar.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); inputBar.classList.add('drag-over'); });
+    inputBar.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); inputBar.classList.remove('drag-over'); });
+    inputBar.addEventListener('drop', (e) => { 
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        inputBar.classList.remove('drag-over'); 
+        if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files); 
+    });
+
+    // Teclado
+    inputBar.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
 
     closeResultBtn.addEventListener('click', () => aiResultPanel.classList.remove('visible'));
 
-    // MODAL DE PERFIL
+    // =============================================
+    // 9. MODAL DE PERFIL (CORRIGIDO)
+    // =============================================
     const profileModalOverlay = document.getElementById('profileModalOverlay');
     const closeProfileModal = document.getElementById('closeProfileModal');
     const profileModalBody = document.getElementById('profileModalBody');
@@ -314,17 +375,63 @@
     async function openProfileModal() {
         profileModalOverlay.classList.add('active');
         profileModalBody.innerHTML = `<div class="ai-loading"><div class="spinner"></div><span>Carregando perfil...</span></div>`;
+
+        let apiUser = null;
+        let localUser = null;
+
+        // Tenta buscar dados locais primeiro (fallback)
         try {
-            const user = await apiFetch('/auth/me');
-            profileModalBody.innerHTML = `
-                <div class="profile-field"><label>Nome</label><span>${escapeHTML(user.nome)}</span></div>
-                <div class="profile-field"><label>E-mail</label><span>${escapeHTML(user.email)}</span></div>
-                <div class="profile-field"><label>Tipo</label><span>${escapeHTML(user.tipo_usuario)}</span></div>
-                <div class="profile-field"><label>Data de Criação</label><span>${user.data_criacao ? new Date(user.data_criacao).toLocaleString('pt-BR') : 'N/A'}</span></div>
-            `;
+            const stored = sessionStorage.getItem('user_data');
+            if (stored) localUser = JSON.parse(stored);
+        } catch (e) { /* ignora */ }
+
+        // Tenta buscar da API
+        try {
+            apiUser = await apiFetch('/auth/me');
+            // Atualiza o localStorage com os dados mais recentes
+            sessionStorage.setItem('user_data', JSON.stringify(apiUser));
         } catch (error) {
-            profileModalBody.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>${escapeHTML(error.message)}</span></div>`;
+            // Se for 401, o apiFetch já redirecionou
+            if (error.status === 401) return;
+            
+            // Se for erro de conexão ou outro, usa fallback
+            if (!localUser) {
+                profileModalBody.innerHTML = `
+                    <div class="ai-error">
+                        <span class="material-symbols-outlined">error</span>
+                        <span>${escapeHTML(error.message)}</span>
+                    </div>
+                `;
+                return;
+            }
         }
+
+        // Mescla dados: API tem prioridade, fallback para local
+        const user = {
+            nome: apiUser?.nome || localUser?.nome || null,
+            email: apiUser?.email || localUser?.email || null,
+            tipo_usuario: apiUser?.tipo_usuario || localUser?.tipo_usuario || null,
+            data_criacao: apiUser?.data_criacao || localUser?.data_criacao || null
+        };
+
+        profileModalBody.innerHTML = `
+            <div class="profile-field">
+                <label>Nome</label>
+                <span>${user.nome ? escapeHTML(user.nome) : 'Não informado'}</span>
+            </div>
+            <div class="profile-field">
+                <label>E-mail</label>
+                <span>${user.email ? escapeHTML(user.email) : 'Não informado'}</span>
+            </div>
+            <div class="profile-field">
+                <label>Tipo de Usuário</label>
+                <span>${user.tipo_usuario ? escapeHTML(user.tipo_usuario) : 'Não informado'}</span>
+            </div>
+            <div class="profile-field">
+                <label>Data de Criação</label>
+                <span>${user.data_criacao ? new Date(user.data_criacao).toLocaleString('pt-BR') : 'Não informada'}</span>
+            </div>
+        `;
     }
 
     function closeProfileModalFn() { profileModalOverlay.classList.remove('active'); }
@@ -335,28 +442,38 @@
     logoutModalBtn.addEventListener('click', () => {
         sessionStorage.removeItem('access_token');
         sessionStorage.removeItem('user_data');
-        window.location.href = '/'; // Navegação absoluta
+        window.location.href = '/';
     });
 
-    // MODAL DE HISTÓRICO
+    // =============================================
+    // 10. MODAL DE HISTÓRICO (CORRIGIDO)
+    // =============================================
     const historyModalOverlay = document.getElementById('historyModalOverlay');
     const closeHistoryModal = document.getElementById('closeHistoryModal');
     const historyModalBody = document.getElementById('historyModalBody');
 
     async function openHistoryModal() {
         historyModalOverlay.classList.add('active');
-        historyModalBody.innerHTML = `<div class="ai-loading"><div class="spinner"></div><span>Carregando...</span></div>`;
+        historyModalBody.innerHTML = `<div class="ai-loading"><div class="spinner"></div><span>Carregando histórico...</span></div>`;
+
         try {
             const documents = await apiFetch('/documents/');
+            
             if (!documents || documents.length === 0) {
-                historyModalBody.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">inbox</span><span>Nenhum documento.</span></div>`;
+                historyModalBody.innerHTML = `
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">inbox</span>
+                        <span>Nenhum documento encontrado.</span>
+                    </div>
+                `;
                 return;
             }
+
             let html = '';
             documents.forEach(doc => {
                 const statusClass = doc.status ? doc.status.toLowerCase() : '';
                 html += `
-                    <div class="history-item" data-doc-id="${doc.id}">
+                    <div class="history-item" data-doc-id="${escapeHTML(doc.id)}">
                         <div class="history-item-icon"><span class="material-symbols-outlined">${iconFor(doc.nome_arquivo || 'file')}</span></div>
                         <div class="history-item-info">
                             <div class="history-item-name">${escapeHTML(doc.nome_arquivo || 'Sem nome')}</div>
@@ -374,20 +491,65 @@
             });
             historyModalBody.innerHTML = html;
 
+            // Adicionar evento de clique em cada item
             historyModalBody.querySelectorAll('.history-item').forEach(item => {
                 item.addEventListener('click', async () => {
                     const docId = item.dataset.docId;
                     historyModalOverlay.classList.remove('active');
+                    
                     try {
                         const result = await apiFetch(`/ai/result/${docId}`);
                         renderAiResult(result);
                     } catch (error) {
-                        showAiError('Este documento ainda não possui uma análise.');
+                        // Diferencia os tipos de erro
+                        if (error.status === 404) {
+                            showAiError('Este documento ainda não possui uma análise de IA.');
+                        } else if (error.status === 401) {
+                            // apiFetch já redirecionou
+                            return;
+                        } else if (error.status === 0) {
+                            showAiError('Não foi possível conectar à API. Verifique sua internet.');
+                        } else {
+                            showAiError(`Erro ao buscar análise: ${error.message}`);
+                        }
                     }
                 });
             });
+
         } catch (error) {
-            historyModalBody.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>${escapeHTML(error.message)}</span></div>`;
+            // Diferencia os tipos de erro na listagem
+            if (error.status === 401) {
+                // apiFetch já redirecionou
+                return;
+            } else if (error.status === 0) {
+                historyModalBody.innerHTML = `
+                    <div class="ai-error">
+                        <span class="material-symbols-outlined">error</span>
+                        <span>Não foi possível conectar à API. Verifique sua internet.</span>
+                    </div>
+                `;
+            } else if (error.status === 403) {
+                historyModalBody.innerHTML = `
+                    <div class="ai-error">
+                        <span class="material-symbols-outlined">error</span>
+                        <span>Acesso negado. Você não tem permissão para ver este histórico.</span>
+                    </div>
+                `;
+            } else if (error.status === 404) {
+                historyModalBody.innerHTML = `
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">inbox</span>
+                        <span>Nenhum documento encontrado.</span>
+                    </div>
+                `;
+            } else {
+                historyModalBody.innerHTML = `
+                    <div class="ai-error">
+                        <span class="material-symbols-outlined">error</span>
+                        <span>Erro ao carregar histórico: ${escapeHTML(error.message)}</span>
+                    </div>
+                `;
+            }
         }
     }
 
@@ -396,7 +558,9 @@
     closeHistoryModal.addEventListener('click', closeHistoryModalFn);
     historyModalOverlay.addEventListener('click', (e) => { if (e.target === historyModalOverlay) closeHistoryModalFn(); });
 
-    // NOVO MODAL DE PESQUISA
+    // =============================================
+    // 11. MODAL DE PESQUISA
+    // =============================================
     const searchModalOverlay = document.getElementById('searchModalOverlay');
     const closeSearchModal = document.getElementById('closeSearchModal');
     const searchInput = document.getElementById('searchInput');
@@ -411,7 +575,6 @@
     function closeSearchModalFn() { searchModalOverlay.classList.remove('active'); }
 
     searchBtn.addEventListener('click', openSearchModal);
-    searchTrigger.addEventListener('click', openSearchModal);
     closeSearchModal.addEventListener('click', closeSearchModalFn);
     searchModalOverlay.addEventListener('click', (e) => { if (e.target === searchModalOverlay) closeSearchModalFn(); });
 
@@ -433,16 +596,14 @@
 
             let html = '';
             results.forEach(doc => {
-                // A API deve retornar se o match foi em insight ou palavra-chave
                 const isInsight = doc.match_type === 'insight';
                 const matchClass = isInsight ? 'insight-match' : '';
                 const matchLabel = isInsight ? '<span class="history-item-status" style="background: rgba(201,162,39,0.15); color: #b8901a;">INSIGHT</span>' : '<span class="history-item-status" style="background: rgba(30,92,179,0.08); color: #1e5cb3;">PALAVRA-CHAVE</span>';
                 
                 let snippet = '';
                 if (isInsight && doc.insight_snippet) {
-                    // Destacar o termo pesquisado no snippet
-                    const highlighted = doc.insight_snippet.replace(
-                        new RegExp(`(${query})`, 'gi'), 
+                    const highlighted = escapeHTML(doc.insight_snippet).replace(
+                        new RegExp(`(${escapeHTML(query)})`, 'gi'), 
                         '<span class="insight-highlight">$1</span>'
                     );
                     snippet = `<div style="font-size:0.75rem; color:#4a6f8f; margin-top:4px; font-style:italic;">"...${highlighted}..."</div>`;
@@ -451,7 +612,7 @@
                 }
 
                 html += `
-                    <div class="history-item ${matchClass}" data-doc-id="${doc.id}">
+                    <div class="history-item ${matchClass}" data-doc-id="${escapeHTML(doc.id)}">
                         <div class="history-item-icon"><span class="material-symbols-outlined">${iconFor(doc.nome_arquivo || 'file')}</span></div>
                         <div class="history-item-info">
                             <div class="history-item-name">${escapeHTML(doc.nome_arquivo || 'Sem nome')}</div>
@@ -472,15 +633,25 @@
                     closeSearchModalFn();
                     try {
                         const result = await apiFetch(`/ai/result/${docId}`);
-                        renderAiResult(result, true); // Passa true para indicar que é um insight
+                        renderAiResult(result, true);
                     } catch (error) {
-                        showAiError('Este documento ainda não possui uma análise.');
+                        if (error.status === 404) {
+                            showAiError('Este documento ainda não possui uma análise de IA.');
+                        } else if (error.status === 0) {
+                            showAiError('Não foi possível conectar à API.');
+                        } else {
+                            showAiError(`Erro: ${error.message}`);
+                        }
                     }
                 });
             });
 
         } catch (error) {
-            searchResults.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>${escapeHTML(error.message)}</span></div>`;
+            if (error.status === 0) {
+                searchResults.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>Não foi possível conectar à API.</span></div>`;
+            } else {
+                searchResults.innerHTML = `<div class="ai-error"><span class="material-symbols-outlined">error</span><span>${escapeHTML(error.message)}</span></div>`;
+            }
         }
     }
 
@@ -496,5 +667,8 @@
         }
     });
 
+    // =============================================
+    // 12. INICIALIZAÇÃO
+    // =============================================
     renderFileTags();
 })();

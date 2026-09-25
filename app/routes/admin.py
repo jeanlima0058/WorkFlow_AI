@@ -9,14 +9,26 @@ router = APIRouter(
 )
 
 def is_admin(user_id: str = Depends(get_current_user)):
-    """Dependência para verificar se o usuário é ADMIN."""
+    """
+    Dependência para verificar se o usuário é ADMIN.
+    Normaliza o valor de tipo_usuario para comparação segura.
+    Retorna 403 se o usuário não for administrador.
+    """
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
+    
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
     user_data = user_doc.to_dict()
-    if user_data.get("tipo_usuario") != "ADMIN":
-        raise HTTPException(status_code=403, detail="Acesso negado. Permissão de administrador necessária.")
+    tipo_usuario = str(user_data.get("tipo_usuario", "")).lower().strip()
+    
+    if tipo_usuario != "admin":
+        raise HTTPException(
+            status_code=403, 
+            detail="Acesso negado. Permissão de administrador necessária."
+        )
+    
     return user_id
 
 @router.get("/stats")
@@ -29,7 +41,10 @@ def get_admin_stats(admin_id: str = Depends(is_admin)):
     all_docs = [doc.to_dict() for doc in docs_ref]
     total_docs = len(all_docs)
     
-    analyzed_docs = sum(1 for doc in all_docs if doc.get("status") in ["OCR_CONCLUIDO", "PROCESSADO"])
+    analyzed_docs = sum(
+        1 for doc in all_docs 
+        if doc.get("status") in ["OCR_CONCLUIDO", "PROCESSADO", "CONCLUIDO"]
+    )
     
     ai_results_ref = db.collection("ai_results").stream()
     total_analyses = sum(1 for _ in ai_results_ref)
@@ -62,7 +77,7 @@ def list_users(admin_id: str = Depends(is_admin)):
     users = []
     for user in users_ref:
         data = user.to_dict()
-        # Remove a senha do retorno
+        # Remove a senha do retorno (segurança)
         data.pop("senha", None)
         users.append(data)
     return users
@@ -73,7 +88,7 @@ def create_user_admin(user_data: UserCreate, admin_id: str = Depends(is_admin)):
     from app.services.auth_service import create_user
     try:
         new_user = create_user(user_data)
-        # Remove a senha do retorno
+        # Remove a senha do retorno (segurança)
         new_user.pop("senha", None)
         return new_user
     except ValueError as error:

@@ -31,7 +31,7 @@
             </p>
         </div>
 
-        <!-- NOVA ESTRUTURA: Ícones de Ação e Arquivos Anexados -->
+        <!-- Barra de ações e arquivos em ícones -->
         <div class="action-bar">
             <div class="action-icons">
                 <button class="action-btn" id="profileBtn" aria-label="Perfil">
@@ -52,24 +52,19 @@
             </div>
         </div>
 
-        <!-- NOVA BARRA DIVIDIDA: UPLOAD E PESQUISA -->
-        <div class="split-input-bar">
-            <div class="input-section upload-section">
-                <div class="input-bar-inner" id="inputBar" tabindex="0" role="button">
-                    <span class="material-symbols-outlined input-icon">attach_file</span>
-                    <span class="input-bar-text" id="inputBarText">Anexar arquivo...</span>
-                </div>
-            </div>
-            <div class="input-section search-section" id="searchTrigger">
-                <div class="input-bar-inner search-inner">
-                    <span class="material-symbols-outlined input-icon">search</span>
-                    <span class="input-bar-text">Pesquisar documentos...</span>
-                </div>
+        <!-- CORRIGIDO: Barra de upload unificada com botão dentro -->
+        <div class="upload-bar-container">
+            <div class="input-bar-inner" id="inputBar" tabindex="0" role="button">
+                <span class="material-symbols-outlined input-icon">attach_file</span>
+                <span class="input-bar-text" id="inputBarText">Anexar arquivo para análise...</span>
+                <button class="attach-btn" id="attachBtn" aria-label="Anexar arquivo">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
             </div>
         </div>
         <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.zip,.json,.xml">
 
-        <!-- PAINEL DE RESULTADO DA IA (com rolagem) -->
+        <!-- Painel de Resultado da IA -->
         <div class="ai-result-panel" id="aiResultPanel">
             <div class="ai-result-header">
                 <h3>
@@ -111,7 +106,7 @@
         </div>
     </div>
 
-    <!-- NOVO MODAL DE PESQUISA -->
+    <!-- MODAL DE PESQUISA -->
     <div class="modal-overlay" id="searchModalOverlay">
         <div class="modal modal-large" id="searchModal">
             <div class="modal-header">
