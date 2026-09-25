@@ -61,7 +61,7 @@
 
     // Modal de usuários
     const usersModalOverlay = document.getElementById('usersModalOverlay');
-    const closeUsersModal = document.getElementById('closeUsersModal');
+    const closeUsersModalBtn = document.getElementById('closeUsersModal');
     const usersListContainer = document.getElementById('usersListContainer');
     const userSearchInput = document.getElementById('userSearchInput');
     const userTypeFilter = document.getElementById('userTypeFilter');
@@ -69,12 +69,12 @@
 
     // Modal de novo usuário
     const newUserModalOverlay = document.getElementById('newUserModalOverlay');
-    const closeNewUserModal = document.getElementById('closeNewUserModal');
+    const closeNewUserModalBtn = document.getElementById('closeNewUserModal');
     const newUserForm = document.getElementById('newUserForm');
 
     // Modal de logs
     const logsModalOverlay = document.getElementById('logsModalOverlay');
-    const closeLogsModal = document.getElementById('closeLogsModal');
+    const closeLogsModalBtn = document.getElementById('closeLogsModal');
     const logsListContainer = document.getElementById('logsListContainer');
     const logStartDate = document.getElementById('logStartDate');
     const logEndDate = document.getElementById('logEndDate');
@@ -160,7 +160,7 @@
                 dataLabels: { enabled: true }
             }).render();
 
-            // Gráfico de Timeline (placeholder - pode ser expandido se houver dados)
+            // Gráfico de Timeline
             new ApexCharts(document.querySelector("#chartTimeline"), {
                 chart: { type: 'area', height: 280, toolbar: { show: false }, fontFamily: 'Inter' },
                 series: [{ name: 'Análises', data: [0, 0, 0, 0, 0, 0, stats.total_analyses] }],
@@ -195,14 +195,12 @@
         const searchTerm = userSearchInput.value.trim().toLowerCase();
         let filtered = allUsers;
 
-        // Filtro por tipo
         if (currentUserFilter === 'admin') {
             filtered = filtered.filter(u => String(u.tipo_usuario || '').toLowerCase() === 'admin');
         } else if (currentUserFilter === 'usuario') {
             filtered = filtered.filter(u => String(u.tipo_usuario || '').toLowerCase() === 'usuario');
         }
 
-        // Filtro por nome
         if (searchTerm) {
             filtered = filtered.filter(u => String(u.nome || '').toLowerCase().includes(searchTerm));
         }
@@ -236,7 +234,7 @@
     function closeUsersModalFn() { usersModalOverlay.classList.remove('active'); }
 
     usersCard.addEventListener('click', openUsersModal);
-    closeUsersModal.addEventListener('click', closeUsersModalFn);
+    closeUsersModalBtn.addEventListener('click', closeUsersModalFn);
     usersModalOverlay.addEventListener('click', (e) => { if (e.target === usersModalOverlay) closeUsersModalFn(); });
 
     userSearchInput.addEventListener('input', renderUsersList);
@@ -250,10 +248,19 @@
         renderUsersList();
     });
 
-    // Modal de Novo Usuário
-    newUserBtn.addEventListener('click', () => newUserModalOverlay.classList.add('active'));
-    closeNewUserModal.addEventListener('click', () => newUserModalOverlay.classList.remove('active'));
-    newUserModalOverlay.addEventListener('click', (e) => { if (e.target === newUserModalOverlay) newUserModalOverlay.classList.remove('active'); });
+    // =============================================
+    // MODAL DE NOVO USUÁRIO
+    // =============================================
+    function openNewUserModal() {
+        newUserModalOverlay.classList.add('active');
+    }
+    function closeNewUserModalFn() {
+        newUserModalOverlay.classList.remove('active');
+    }
+
+    newUserBtn.addEventListener('click', openNewUserModal);
+    closeNewUserModalBtn.addEventListener('click', closeNewUserModalFn);
+    newUserModalOverlay.addEventListener('click', (e) => { if (e.target === newUserModalOverlay) closeNewUserModalFn(); });
 
     newUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -269,7 +276,7 @@
                 method: 'POST',
                 body: JSON.stringify(userData)
             });
-            newUserModalOverlay.classList.remove('active');
+            closeNewUserModalFn();
             newUserForm.reset();
             // Recarregar lista
             allUsers = await apiFetch('/admin/users');
@@ -332,7 +339,7 @@
     function closeLogsModalFn() { logsModalOverlay.classList.remove('active'); }
 
     logsCard.addEventListener('click', openLogsModal);
-    closeLogsModal.addEventListener('click', closeLogsModalFn);
+    closeLogsModalBtn.addEventListener('click', closeLogsModalFn);
     logsModalOverlay.addEventListener('click', (e) => { if (e.target === logsModalOverlay) closeLogsModalFn(); });
 
     // Filtro por data
@@ -376,12 +383,10 @@
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeUsersModalFn();
-            closeNewUserModal();
+            closeNewUserModalFn();
             closeLogsModalFn();
         }
     });
-
-    function closeNewUserModal() { newUserModalOverlay.classList.remove('active'); }
 
     // =============================================
     // INICIALIZAÇÃO
