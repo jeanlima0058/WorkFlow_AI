@@ -1,10 +1,5 @@
 import os
 
-from app.ocr.ocr_service import (
-    extrair_texto_pdf,
-    extrair_texto_imagem
-)
-
 from app.services.text_extractor import extrair_texto_txt
 from app.services.spreadsheet_extractor import extrair_planilha
 from app.services.yaml_extractor import extrair_yaml
@@ -18,25 +13,20 @@ def processar_documento(caminho_arquivo: str) -> dict:
 
     try:
 
-        if extensao == ".pdf":
-
-            texto = extrair_texto_pdf(
-                caminho_arquivo
-            )
-
-            tipo = "PDF"
-
-        elif extensao in [
-            ".png",
-            ".jpg",
-            ".jpeg"
+        if extensao in [
+            ".pdf", ".png", ".jpg", ".jpeg", ".bmp",
+            ".tif", ".tiff", ".gif", ".webp"
         ]:
-
-            texto = extrair_texto_imagem(
-                caminho_arquivo
-            )
-
-            tipo = "IMAGEM"
+            return {
+                "sucesso": False,
+                "texto": "",
+                "status": "OCR_REQUER_ROTA",
+                "tipo": "DOCUMENTO_OCR",
+                "mensagem": (
+                    "Arquivos PDF e imagem devem ser processados pela "
+                    "rota /ocr/process/{document_id}."
+                )
+            }
 
         elif extensao == ".txt":
 
