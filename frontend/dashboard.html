@@ -46,20 +46,7 @@
 <body>
 
 
-    <div
-        class="bg-canvas"
-        aria-hidden="true"
-    >
 
-        <div class="bg-track"></div>
-
-        <div class="bg-track secondary"></div>
-
-        <div class="bg-track tertiary"></div>
-
-        <div class="analysis-node"></div>
-
-    </div>
 
 
     <main class="content">
@@ -226,19 +213,7 @@
 
         </div>
 
-        <div class="analysis-options" style="display:grid;gap:12px;margin:16px 0;">
-            <label for="analysisPrompt" style="font-weight:600;">Instrução para a IA (opcional)</label>
-            <textarea id="analysisPrompt" rows="3" maxlength="4000"
-                placeholder="Ex.: Leia o documento, extraia os principais dados e faça um resumo com os pontos de atenção."
-                style="width:100%;padding:12px;border:1px solid #c9cdd3;border-radius:10px;resize:vertical;font:inherit;"></textarea>
-            <label for="aiProvider" style="font-weight:600;">Modelo de IA</label>
-            <select id="aiProvider" style="max-width:320px;padding:10px;border:1px solid #c9cdd3;border-radius:10px;font:inherit;">
-                <option value="gemini" selected>Gemini (padrão)</option>
-                <option value="grok" disabled>Grok (em breve)</option>
-                <option value="llama" disabled>Llama (em breve)</option>
-            </select>
-            <small style="color:#777;">Nesta etapa, a leitura direta está integrada apenas ao Gemini. Grok e Llama serão habilitados após configurar suas APIs.</small>
-        </div>
+
 
         <!-- ========================================= -->
         <!-- INPUT DE ARQUIVO -->

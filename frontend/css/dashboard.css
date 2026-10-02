@@ -8,7 +8,8 @@ html, body {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: linear-gradient(160deg, #f5faff 0%, #e8f2fe 50%, #dde9fb 100%);
+    background: linear-gradient(145deg, #f7faff 0%, #edf4fd 48%, #e5edfa 100%);
+    animation: dashboardEnter 0.85s cubic-bezier(0.2, 0, 0, 1) both;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -19,31 +20,18 @@ body {
 }
 
 /* ==============================================
-   FUNDO ANIMADO
+   FUNDO SUAVE E TRANSIÇÃO DE ENTRADA
    ============================================== */
-.bg-canvas { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.bg-track { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent 0%, rgba(30, 92, 179, 0.08) 10%, rgba(30, 92, 179, 0.15) 50%, rgba(201, 162, 39, 0.12) 90%, transparent 100%); transform: translateY(-50%); }
-.bg-track.secondary { top: 28%; height: 1px; opacity: 0.5; }
-.bg-track.tertiary { top: 72%; height: 1px; opacity: 0.4; }
+.bg-canvas { display: none; }
 
-.traveler { position: absolute; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 4px 14px -4px rgba(30, 92, 179, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.6) inset; border: 1px solid rgba(30, 92, 179, 0.1); animation: travelRight linear infinite; will-change: transform; }
-.traveler .material-symbols-outlined { font-size: 16px; color: #1e5cb3; opacity: 0.9; }
-.traveler.gold { border-color: rgba(201, 162, 39, 0.25); box-shadow: 0 4px 14px -4px rgba(201, 162, 39, 0.25), 0 0 0 1px rgba(255, 248, 225, 0.7) inset; }
-.traveler.gold .material-symbols-outlined { color: #b8901a; }
-.traveler.small { width: 26px; height: 26px; border-radius: 8px; } .traveler.small .material-symbols-outlined { font-size: 13px; }
-.traveler.medium { width: 34px; height: 34px; } .traveler.medium .material-symbols-outlined { font-size: 17px; }
-.traveler.large { width: 42px; height: 42px; border-radius: 14px; } .traveler.large .material-symbols-outlined { font-size: 22px; }
+@keyframes dashboardEnter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-.dot { position: absolute; border-radius: 50%; animation: travelRight linear infinite; will-change: transform; }
-
-@keyframes travelRight { 0% { transform: translateX(-120px) translateY(0) rotate(0deg); opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { transform: translateX(calc(100vw + 120px)) translateY(0) rotate(360deg); opacity: 0; } }
-@keyframes travelWave { 0% { transform: translateX(-120px) translateY(0); opacity: 0; } 10% { opacity: 1; } 50% { transform: translateX(50vw) translateY(-30px); } 90% { opacity: 1; } 100% { transform: translateX(calc(100vw + 120px)) translateY(20px); opacity: 0; } }
-
-.analysis-node { position: absolute; right: 6%; top: 50%; transform: translateY(-50%); width: 80px; height: 80px; border-radius: 50%; background: radial-gradient(circle, rgba(201, 162, 39, 0.15) 0%, transparent 70%); animation: nodePulse 3s ease-in-out infinite; }
-.analysis-node::before { content: ''; position: absolute; inset: 20px; border-radius: 50%; border: 2px solid rgba(30, 92, 179, 0.25); animation: nodeSpin 8s linear infinite; border-top-color: rgba(201, 162, 39, 0.6); }
-.analysis-node::after { content: ''; position: absolute; inset: 30px; border-radius: 50%; background: linear-gradient(135deg, rgba(30, 92, 179, 0.6), rgba(201, 162, 39, 0.6)); animation: nodePulse 2s ease-in-out infinite; box-shadow: 0 0 20px rgba(201, 162, 39, 0.4); }
-@keyframes nodePulse { 0%, 100% { opacity: 0.5; transform: translateY(-50%) scale(1); } 50% { opacity: 0.9; transform: translateY(-50%) scale(1.08); } }
-@keyframes nodeSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    body { animation: none; }
+}
 
 /* ==============================================
    CONTEÚDO PRINCIPAL

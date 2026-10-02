@@ -71,65 +71,6 @@
     }
 
     // =============================================
-    // 3. FUNDO ANIMADO
-    // =============================================
-    const bgCanvas = document.querySelector('.bg-canvas');
-    const tracks = [{ top: '28%' }, { top: '50%' }, { top: '72%' }];
-    const fileIcons = ['description', 'picture_as_pdf', 'image', 'table_chart', 'text_snippet', 'folder_zip', 'insert_drive_file', 'dataset', 'analytics', 'receipt_long', 'article', 'code'];
-    const dotColors = ['rgba(30, 92, 179, 0.4)', 'rgba(201, 162, 39, 0.4)', 'rgba(74, 142, 255, 0.4)', 'rgba(219, 185, 61, 0.35)', 'rgba(30, 92, 179, 0.25)'];
-
-    function createTraveler() {
-        if (!bgCanvas) return;
-        const lane = tracks[Math.floor(Math.random() * tracks.length)];
-        const el = document.createElement('div');
-        const isGold = Math.random() > 0.65;
-        const sizeClass = ['small', 'medium', 'medium', 'large'][Math.floor(Math.random() * 4)];
-        el.className = `traveler ${sizeClass} ${isGold ? 'gold' : ''}`;
-        const iconName = fileIcons[Math.floor(Math.random() * fileIcons.length)];
-        el.innerHTML = `<span class="material-symbols-outlined">${iconName}</span>`;
-        const baseTop = parseFloat(lane.top);
-        const variation = (Math.random() - 0.5) * 6;
-        el.style.top = `calc(${baseTop}% + ${variation}px)`;
-        el.style.left = '-100px';
-        const duration = 14 + Math.random() * 16;
-        const delay = Math.random() * -30;
-        el.style.animationDuration = `${duration}s`;
-        el.style.animationDelay = `${delay}s`;
-        if (Math.random() > 0.6) el.style.animationName = 'travelWave';
-        bgCanvas.appendChild(el);
-        setTimeout(() => { if (el.parentNode) el.remove(); }, (duration + Math.abs(delay)) * 1000 + 2000);
-    }
-
-    function createDot() {
-        if (!bgCanvas) return;
-        const lane = tracks[Math.floor(Math.random() * tracks.length)];
-        const el = document.createElement('div');
-        el.className = 'dot';
-        const size = 4 + Math.random() * 8;
-        const color = dotColors[Math.floor(Math.random() * dotColors.length)];
-        el.style.width = `${size}px`; el.style.height = `${size}px`;
-        el.style.background = color; el.style.boxShadow = `0 0 ${size * 2}px ${color}`;
-        const baseTop = parseFloat(lane.top);
-        const variation = (Math.random() - 0.5) * 10;
-        el.style.top = `calc(${baseTop}% + ${variation}px)`;
-        el.style.left = '-50px';
-        const duration = 10 + Math.random() * 15;
-        const delay = Math.random() * -25;
-        el.style.animationDuration = `${duration}s`;
-        el.style.animationDelay = `${delay}s`;
-        bgCanvas.appendChild(el);
-        setTimeout(() => { if (el.parentNode) el.remove(); }, (duration + Math.abs(delay)) * 1000 + 2000);
-    }
-
-    function initBackground() {
-        for (let i = 0; i < 14; i++) setTimeout(() => createTraveler(), i * 300);
-        for (let i = 0; i < 20; i++) setTimeout(() => createDot(), i * 200);
-        setInterval(() => createTraveler(), 1400);
-        setInterval(() => createDot(), 700);
-    }
-    initBackground();
-
-    // =============================================
     // 4. ELEMENTOS DO DOM
     // =============================================
     const inputBar = document.getElementById('inputBar');
@@ -196,8 +137,6 @@
         showAiResult(`<div class="ai-loading"><div class="spinner"></div><span>Enviando documento diretamente ao Gemini...</span></div>`);
         const formData = new FormData();
         formData.append('arquivo', file);
-        formData.append('instrucao', document.getElementById('analysisPrompt')?.value || '');
-        formData.append('provedor', document.getElementById('aiProvider')?.value || 'gemini');
 
         try {
             const result = await apiFetch('/ai/analyze-upload', {
