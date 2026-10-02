@@ -192,23 +192,19 @@
         });
     }
 
-    async function uploadFile(file) {
+    async function processDocument(file) {
+        showAiResult(`<div class="ai-loading"><div class="spinner"></div><span>Enviando documento diretamente ao Gemini...</span></div>`);
         const formData = new FormData();
         formData.append('arquivo', file);
-        return await apiFetch('/documents/upload', { method: 'POST', body: formData });
-    }
+        formData.append('instrucao', document.getElementById('analysisPrompt')?.value || '');
+        formData.append('provedor', document.getElementById('aiProvider')?.value || 'gemini');
 
-    async function processDocument(documentId) {
-        showAiResult(`<div class="ai-loading"><div class="spinner"></div><span>Extraindo texto (OCR)...</span></div>`);
         try {
-            await apiFetch(`/ocr/process/${documentId}`, { method: 'POST' });
-        } catch (error) {
-            throw new Error(`Falha no OCR: ${error.message}`);
-        }
-
-        showAiResult(`<div class="ai-loading"><div class="spinner"></div><span>Analisando com IA...</span></div>`);
-        try {
-            const result = await apiFetch(`/ai/analyze/${documentId}`, { method: 'POST' });
+            const result = await apiFetch('/ai/analyze-upload', {
+                method: 'POST',
+                body: formData,
+            });
+            renderAiResult(result);
             return result;
         } catch (error) {
             throw new Error(`Falha na análise: ${error.message}`);
@@ -293,10 +289,7 @@
 
             for (const file of arr) {
                 try {
-                    const doc = await uploadFile(file);
-                    if (doc && doc.id) {
-                        await processDocument(doc.id);
-                    }
+                    await processDocument(file);
                 } catch (error) {
                     showAiError(error.message);
                 }
